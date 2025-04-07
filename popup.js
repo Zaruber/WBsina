@@ -2020,10 +2020,83 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
   
+  // Функция для отображения опций синхронизации
+  function showSyncOptions() {
+    // Получаем контейнер опций и очищаем его
+    const syncOptionsContainer = document.querySelector('.sync-options');
+    const syncItemsContainer = document.querySelector('.sync-items-container');
+    syncItemsContainer.innerHTML = '';
+    
+    // Если нет избранных товаров
+    if (favoriteProducts.length === 0) {
+      alert('Нет избранных товаров для синхронизации.');
+      return;
+    }
+    
+    // Показываем контейнер опций
+    syncOptionsContainer.classList.remove('hidden');
+    
+    // Создаем элементы для каждого избранного товара
+    favoriteProducts.forEach(product => {
+      const syncItem = document.createElement('div');
+      syncItem.className = 'sync-item';
+      syncItem.innerHTML = `
+        <input type="checkbox" class="sync-item-checkbox" data-id="${product.id}" checked>
+        <div class="sync-item-info">
+          <div class="sync-item-name">${product.name}</div>
+          <div class="sync-item-brand">${product.brand}</div>
+        </div>
+      `;
+      syncItemsContainer.appendChild(syncItem);
+    });
+    
+    // Добавляем обработчики событий для кнопок
+    document.getElementById('selectAllBtn').addEventListener('click', () => {
+      document.querySelectorAll('.sync-item-checkbox').forEach(checkbox => {
+        checkbox.checked = true;
+      });
+    });
+    
+    document.getElementById('deselectAllBtn').addEventListener('click', () => {
+      document.querySelectorAll('.sync-item-checkbox').forEach(checkbox => {
+        checkbox.checked = false;
+      });
+    });
+    
+    document.getElementById('startSyncBtn').addEventListener('click', () => {
+      const selectedIds = Array.from(document.querySelectorAll('.sync-item-checkbox:checked'))
+        .map(checkbox => checkbox.getAttribute('data-id'));
+      
+      if (selectedIds.length === 0) {
+        alert('Выберите хотя бы один товар для синхронизации.');
+        return;
+      }
+      
+      // Запускаем синхронизацию выбранных товаров
+      syncSelectedFavorites(selectedIds);
+      
+      // Скрываем панель опций
+      syncOptionsContainer.classList.add('hidden');
+    });
+    
+    document.getElementById('cancelSyncBtn').addEventListener('click', () => {
+      syncOptionsContainer.classList.add('hidden');
+    });
+  }
+  
   // Функция синхронизации избранного
   async function syncFavorites() {
-    // Проверяем, есть ли избранные товары
-    if (favoriteProducts.length === 0) {
+    // Показываем панель выбора товаров для синхронизации
+    showSyncOptions();
+  }
+  
+  // Функция синхронизации выбранных избранных товаров
+  async function syncSelectedFavorites(selectedIds) {
+    // Фильтруем список избранных товаров по выбранным ID
+    const productsToSync = favoriteProducts.filter(product => selectedIds.includes(product.id.toString()));
+    
+    // Если нет товаров для синхронизации
+    if (productsToSync.length === 0) {
       alert('Нет избранных товаров для синхронизации.');
       return;
     }
@@ -2031,20 +2104,19 @@ document.addEventListener('DOMContentLoaded', () => {
     // Изменяем состояние кнопки
     syncFavoritesBtn.classList.add('syncing');
     syncFavoritesBtn.disabled = true;
-    syncFavoritesBtn.textContent = 'Синхронизация...';
     
     // Создаем переменную для отслеживания прогресса синхронизации
     let syncedCount = 0;
-    const totalCount = favoriteProducts.length;
+    const totalCount = productsToSync.length;
     
     // Создаем массив ошибок при синхронизации
     const errors = [];
     
     // Последовательно обрабатываем каждый товар
-    for (const product of favoriteProducts) {
+    for (const product of productsToSync) {
       try {
-        // Обновляем текст кнопки с прогрессом
-        syncFavoritesBtn.textContent = `Синхронизация (${syncedCount + 1}/${totalCount})...`;
+        // Обновляем состояние кнопки с прогрессом
+        syncFavoritesBtn.setAttribute('title', `Синхронизация (${syncedCount + 1}/${totalCount})...`);
         
         // Получаем полные данные о товаре
         await new Promise((resolve, reject) => {
@@ -2165,7 +2237,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Восстанавливаем состояние кнопки
     syncFavoritesBtn.classList.remove('syncing');
     syncFavoritesBtn.disabled = false;
-    syncFavoritesBtn.textContent = '↻ Синхронизировать';
+    syncFavoritesBtn.setAttribute('title', 'Синхронизировать историю избранных товаров');
     
     // Показываем сообщение о завершении синхронизации
     if (errors.length === 0) {

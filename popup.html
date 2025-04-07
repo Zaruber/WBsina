@@ -125,8 +125,21 @@
         <h3>Избранные товары</h3>
         <div class="favorites-tools">
           <input type="text" id="favoritesSearch" placeholder="Поиск в избранном...">
-          <button id="syncFavoritesBtn" class="sync-button" title="Синхронизировать историю всех избранных товаров">↻ Синхронизировать</button>
+          <button id="syncFavoritesBtn" class="sync-button-compact" title="Синхронизировать историю избранных товаров">↻</button>
         </div>
+      </div>
+      
+      <div class="sync-options hidden">
+        <div class="sync-header">
+          <h4>Выберите товары для синхронизации</h4>
+          <div class="sync-actions">
+            <button id="selectAllBtn" class="mini-button">Выбрать все</button>
+            <button id="deselectAllBtn" class="mini-button">Снять выбор</button>
+            <button id="startSyncBtn" class="primary-button">Запустить</button>
+            <button id="cancelSyncBtn" class="mini-button">Отмена</button>
+          </div>
+        </div>
+        <div class="sync-items-container"></div>
       </div>
       
       <div id="favoritesList" class="favorites-catalog">

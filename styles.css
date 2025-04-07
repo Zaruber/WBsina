@@ -1297,9 +1297,136 @@ hr {
   animation: spin 1s linear infinite;
 }
 
+/* Компактная кнопка синхронизации */
+.sync-button-compact {
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border-radius: 50%;
+  margin-left: 8px;
+  font-size: 12px;
+  background-color: var(--light-text);
+  color: white;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.sync-button-compact:hover {
+  background-color: var(--primary-color);
+}
+
+.sync-button-compact.syncing {
+  animation: spin 1s linear infinite;
+  background-color: var(--primary-color);
+  opacity: 0.7;
+  cursor: wait;
+}
+
 @keyframes spin {
   0% { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
+}
+
+/* Стили для секции выбора товаров для синхронизации */
+.sync-options {
+  margin-bottom: var(--space-sm);
+  background-color: var(--secondary-color);
+  border-radius: var(--card-radius);
+  padding: var(--space-sm);
+  border: 1px solid var(--border-color);
+}
+
+.sync-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--space-sm);
+}
+
+.sync-header h4 {
+  margin: 0;
+  font-size: 13px;
+  color: var(--text-color);
+}
+
+.sync-actions {
+  display: flex;
+  gap: 4px;
+}
+
+.mini-button {
+  padding: 3px 6px;
+  font-size: 10px;
+  background-color: transparent;
+  color: var(--text-color);
+  border: 1px solid var(--border-color);
+  border-radius: var(--card-radius);
+  cursor: pointer;
+}
+
+.mini-button:hover {
+  background-color: white;
+}
+
+.primary-button {
+  padding: 3px 8px;
+  font-size: 11px;
+  background-color: var(--primary-color);
+  color: white;
+  border: none;
+  border-radius: var(--card-radius);
+  cursor: pointer;
+}
+
+.primary-button:hover {
+  background-color: var(--primary-hover);
+}
+
+.sync-items-container {
+  max-height: 160px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: var(--space-xs);
+}
+
+.sync-item {
+  display: flex;
+  align-items: center;
+  background-color: white;
+  padding: 4px 6px;
+  border-radius: var(--card-radius);
+  border: 1px solid var(--border-color);
+  width: 100%;
+}
+
+.sync-item-checkbox {
+  margin-right: 6px;
+}
+
+.sync-item-info {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  flex: 1;
+}
+
+.sync-item-name {
+  font-size: 11px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-weight: 500;
+}
+
+.sync-item-brand {
+  font-size: 9px;
+  color: var(--light-text);
 }
 
 /* Стили для раздела избранное */

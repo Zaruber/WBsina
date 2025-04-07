@@ -7,6 +7,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const saveBtn = document.getElementById('saveBtn');
   const exportBtn = document.getElementById('exportBtn');
   const addToFavoritesBtn = document.getElementById('addToFavoritesBtn');
+  const syncFavoritesBtn = document.getElementById('syncFavoritesBtn');
 
   // Элементы информации о товаре
   const productImage = document.getElementById('productImage');
@@ -19,6 +20,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const productFeedbacks = document.getElementById('productFeedbacks');
   const warehouseDistribution = document.getElementById('warehouseDistribution');
   const logisticsInfo = document.getElementById('logisticsInfo');
+  const historyInfo = document.getElementById('historyInfo');
   
   // Элементы для работы с меню
   const menuItems = document.querySelectorAll('.main-menu li');
@@ -157,6 +159,11 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
+  // Обработчик для кнопки синхронизации избранного
+  syncFavoritesBtn.addEventListener('click', () => {
+    syncFavorites();
+  });
+
   // Функция инициализации обработчиков для сворачиваемых блоков
   function initCollapsibleSections() {
     const collapsibleSections = document.querySelectorAll('.section.collapsible');
@@ -238,14 +245,32 @@ document.addEventListener('DOMContentLoaded', () => {
           savedProducts[existingIndex].priceHistory = [];
         }
         
+        // Добавляем новую запись в историю цен
         savedProducts[existingIndex].priceHistory.push({
           date: currentDate,
-          price: currentPrice
+          price: currentPrice,
+          savedData: {
+            // Добавляем ключевые данные для отслеживания истории
+            feedbacks: currentProductData.feedbacks,
+            sizes: currentProductData.sizes
+          }
         });
         
+        // Добавляем информацию об отзывах в историю
+        if (!savedProducts[existingIndex].feedbacksHistory) {
+          savedProducts[existingIndex].feedbacksHistory = [];
+        }
+        
+        savedProducts[existingIndex].feedbacksHistory.push({
+          date: currentDate,
+          count: currentProductData.feedbacks
+        });
+        
+        // Обновляем данные товара
         savedProducts[existingIndex] = {
           ...currentProductData,
           priceHistory: savedProducts[existingIndex].priceHistory,
+          feedbacksHistory: savedProducts[existingIndex].feedbacksHistory,
           lastUpdated: currentDate
         };
       } else {
@@ -254,7 +279,16 @@ document.addEventListener('DOMContentLoaded', () => {
           ...currentProductData,
           priceHistory: [{
             date: currentDate,
-            price: currentPrice
+            price: currentPrice,
+            savedData: {
+              // Добавляем ключевые данные для отслеживания истории
+              feedbacks: currentProductData.feedbacks,
+              sizes: currentProductData.sizes
+            }
+          }],
+          feedbacksHistory: [{
+            date: currentDate,
+            count: currentProductData.feedbacks
           }],
           firstSaved: currentDate,
           lastUpdated: currentDate
@@ -263,6 +297,10 @@ document.addEventListener('DOMContentLoaded', () => {
       
       chrome.storage.local.set({ savedProducts }, () => {
         alert('Товар сохранён в историю');
+        // Обновляем отображение истории, если она видна
+        if (!document.querySelector('#historyInfo').closest('.section').classList.contains('collapsed')) {
+          displayProductData(currentProductData);
+        }
       });
     });
   });
@@ -768,6 +806,922 @@ document.addEventListener('DOMContentLoaded', () => {
         logisticsInfo.appendChild(logisticsItem4);
       }
     }
+    
+    // Отображение истории товара
+    historyInfo.innerHTML = '';
+    
+    // Загружаем историю товара из локального хранилища
+    chrome.storage.local.get({ savedProducts: [] }, (result) => {
+      const savedProduct = result.savedProducts.find(p => p.id === product.id);
+      
+      if (!savedProduct || !savedProduct.priceHistory || savedProduct.priceHistory.length <= 1) {
+        historyInfo.innerHTML = '<div class="no-data">История не найдена. Сохраните товар в историю, чтобы отслеживать изменения.</div>';
+        return;
+      }
+      
+      // Создаем секцию истории цен
+      const priceHistorySection = document.createElement('div');
+      priceHistorySection.className = 'history-section';
+      
+      // Заголовок истории цен
+      const priceHistoryTitle = document.createElement('h4');
+      priceHistoryTitle.className = 'history-title';
+      priceHistoryTitle.textContent = 'История цен';
+      priceHistorySection.appendChild(priceHistoryTitle);
+      
+      // Таблица истории цен
+      const priceHistoryTable = document.createElement('table');
+      priceHistoryTable.className = 'history-table';
+      
+      // Заголовок таблицы
+      priceHistoryTable.innerHTML = `
+        <thead>
+          <tr>
+            <th>Дата</th>
+            <th>Цена</th>
+            <th>Изменение</th>
+          </tr>
+        </thead>
+        <tbody>
+        </tbody>
+      `;
+      
+      const tbody = priceHistoryTable.querySelector('tbody');
+      
+      // Сортируем историю по дате (от новых к старым)
+      const sortedHistory = [...savedProduct.priceHistory].sort((a, b) => 
+        new Date(b.date) - new Date(a.date)
+      );
+      
+      // Добавляем строки с историей цен
+      sortedHistory.forEach((entry, index) => {
+        const row = document.createElement('tr');
+        
+        // Форматируем дату
+        const date = new Date(entry.date);
+        const formattedDate = `${date.toLocaleDateString()} ${date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}`;
+        
+        // Вычисляем изменение цены
+        let priceChange = '';
+        let changeClass = '';
+        
+        if (index < sortedHistory.length - 1) {
+          const diff = entry.price - sortedHistory[index + 1].price;
+          const percentChange = ((diff / sortedHistory[index + 1].price) * 100).toFixed(1);
+          
+          if (diff > 0) {
+            priceChange = `+${diff.toFixed(0)} ₽ (+${percentChange}%)`;
+            changeClass = 'price-up';
+          } else if (diff < 0) {
+            priceChange = `${diff.toFixed(0)} ₽ (${percentChange}%)`;
+            changeClass = 'price-down';
+          } else {
+            priceChange = 'Без изменений';
+            changeClass = 'price-same';
+          }
+        } else {
+          priceChange = 'Первое сохранение';
+          changeClass = 'price-same';
+        }
+        
+        row.innerHTML = `
+          <td>${formattedDate}</td>
+          <td>${entry.price.toFixed(0)} ₽</td>
+          <td class="${changeClass}">${priceChange}</td>
+        `;
+        
+        tbody.appendChild(row);
+      });
+      
+      priceHistorySection.appendChild(priceHistoryTable);
+      historyInfo.appendChild(priceHistorySection);
+      
+      // Добавляем историю отзывов, если есть несколько сохранений
+      if (sortedHistory.length > 1 && savedProduct.feedbacksHistory) {
+        const feedbacksHistorySection = document.createElement('div');
+        feedbacksHistorySection.className = 'history-section';
+        
+        const feedbacksHistoryTitle = document.createElement('h4');
+        feedbacksHistoryTitle.className = 'history-title';
+        feedbacksHistoryTitle.textContent = 'История отзывов';
+        feedbacksHistorySection.appendChild(feedbacksHistoryTitle);
+        
+        const feedbacksHistoryTable = document.createElement('table');
+        feedbacksHistoryTable.className = 'history-table';
+        
+        feedbacksHistoryTable.innerHTML = `
+          <thead>
+            <tr>
+              <th>Дата</th>
+              <th>Отзывы</th>
+              <th>Изменение</th>
+            </tr>
+          </thead>
+          <tbody>
+          </tbody>
+        `;
+        
+        const feedbacksTbody = feedbacksHistoryTable.querySelector('tbody');
+        
+        // Если есть данные истории отзывов
+        if (savedProduct.feedbacksHistory && savedProduct.feedbacksHistory.length > 0) {
+          const sortedFeedbacksHistory = [...savedProduct.feedbacksHistory].sort((a, b) => 
+            new Date(b.date) - new Date(a.date)
+          );
+          
+          sortedFeedbacksHistory.forEach((entry, index) => {
+            const row = document.createElement('tr');
+            
+            // Форматируем дату
+            const date = new Date(entry.date);
+            const formattedDate = `${date.toLocaleDateString()} ${date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}`;
+            
+            // Вычисляем изменение кол-ва отзывов
+            let feedbacksChange = '';
+            let changeClass = '';
+            
+            if (index < sortedFeedbacksHistory.length - 1) {
+              const diff = entry.count - sortedFeedbacksHistory[index + 1].count;
+              
+              if (diff > 0) {
+                feedbacksChange = `+${diff}`;
+                changeClass = 'price-up'; // Используем тот же класс для цветового оформления
+              } else if (diff < 0) {
+                feedbacksChange = `${diff}`;
+                changeClass = 'price-down';
+              } else {
+                feedbacksChange = 'Без изменений';
+                changeClass = 'price-same';
+              }
+            } else {
+              feedbacksChange = 'Первое сохранение';
+              changeClass = 'price-same';
+            }
+            
+            row.innerHTML = `
+              <td>${formattedDate}</td>
+              <td>${entry.count}</td>
+              <td class="${changeClass}">${feedbacksChange}</td>
+            `;
+            
+            feedbacksTbody.appendChild(row);
+          });
+        } else {
+          // Создаем историю на основе общей истории сохранений
+          sortedHistory.forEach((entry, index) => {
+            if (!entry.savedData || !entry.savedData.feedbacks) return;
+            
+            const row = document.createElement('tr');
+            
+            // Форматируем дату
+            const date = new Date(entry.date);
+            const formattedDate = `${date.toLocaleDateString()} ${date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}`;
+            
+            // Вычисляем изменение кол-ва отзывов
+            let feedbacksChange = '';
+            let changeClass = '';
+            
+            if (index < sortedHistory.length - 1 && sortedHistory[index + 1].savedData && sortedHistory[index + 1].savedData.feedbacks) {
+              const diff = entry.savedData.feedbacks - sortedHistory[index + 1].savedData.feedbacks;
+              
+              if (diff > 0) {
+                feedbacksChange = `+${diff}`;
+                changeClass = 'price-up';
+              } else if (diff < 0) {
+                feedbacksChange = `${diff}`;
+                changeClass = 'price-down';
+              } else {
+                feedbacksChange = 'Без изменений';
+                changeClass = 'price-same';
+              }
+            } else {
+              feedbacksChange = 'Первое сохранение';
+              changeClass = 'price-same';
+            }
+            
+            row.innerHTML = `
+              <td>${formattedDate}</td>
+              <td>${entry.savedData.feedbacks}</td>
+              <td class="${changeClass}">${feedbacksChange}</td>
+            `;
+            
+            feedbacksTbody.appendChild(row);
+          });
+        }
+        
+        feedbacksHistorySection.appendChild(feedbacksHistoryTable);
+        historyInfo.appendChild(feedbacksHistorySection);
+      }
+      
+      // Добавляем историю остатков по размерам
+      if (sortedHistory.length > 1) {
+        const stockHistorySection = document.createElement('div');
+        stockHistorySection.className = 'history-section';
+        
+        const stockHistoryTitle = document.createElement('h4');
+        stockHistoryTitle.className = 'history-title';
+        stockHistoryTitle.textContent = 'История остатков по размерам';
+        stockHistorySection.appendChild(stockHistoryTitle);
+        
+        // Создаем таблицу с историей остатков по размерам
+        const stockHistoryTable = document.createElement('table');
+        stockHistoryTable.className = 'history-table stock-history-table';
+        
+        // Собираем все размеры, которые встречались в сохранениях
+        const allSizes = new Set();
+        const savedDataWithSizes = [];
+        
+        sortedHistory.forEach((entry) => {
+          // Проверяем, что есть сохраненные данные о размерах
+          if (entry.savedData && entry.savedData.sizes) {
+            entry.savedData.sizes.forEach(size => {
+              const sizeName = size.name || size.origName || 'Без размера';
+              allSizes.add(sizeName);
+            });
+            
+            // Добавляем в массив данные с датой для дальнейшей обработки
+            savedDataWithSizes.push({
+              date: entry.date,
+              sizes: entry.savedData.sizes
+            });
+          }
+        });
+        
+        // Если есть данные о размерах
+        if (allSizes.size > 0 && savedDataWithSizes.length > 0) {
+          // Формируем заголовок таблицы
+          const headerRow = document.createElement('tr');
+          headerRow.innerHTML = '<th>Дата</th>';
+          
+          // Добавляем колонки для каждого размера
+          allSizes.forEach(sizeName => {
+            headerRow.innerHTML += `<th>${sizeName}</th>`;
+          });
+          
+          // Создаем и добавляем thead с заголовком
+          const thead = document.createElement('thead');
+          thead.appendChild(headerRow);
+          stockHistoryTable.appendChild(thead);
+          
+          // Создаем tbody
+          const stockTbody = document.createElement('tbody');
+          
+          // Добавляем строки с историей остатков
+          savedDataWithSizes.forEach((entry) => {
+            const row = document.createElement('tr');
+            
+            // Форматируем дату
+            const date = new Date(entry.date);
+            const formattedDate = `${date.toLocaleDateString()} ${date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}`;
+            
+            row.innerHTML = `<td>${formattedDate}</td>`;
+            
+            // Для каждого размера добавляем его количество
+            allSizes.forEach(sizeName => {
+              // Находим размер в текущем сохранении
+              let totalQty = 0;
+              const size = entry.sizes.find(s => (s.name || s.origName) === sizeName);
+              
+              if (size && size.stocks) {
+                // Считаем общее количество по всем складам для этого размера
+                totalQty = size.stocks.reduce((sum, stock) => sum + stock.qty, 0);
+              }
+              
+              row.innerHTML += `<td>${totalQty}</td>`;
+            });
+            
+            stockTbody.appendChild(row);
+          });
+          
+          stockHistoryTable.appendChild(stockTbody);
+          stockHistorySection.appendChild(stockHistoryTable);
+          historyInfo.appendChild(stockHistorySection);
+        }
+      }
+      
+      // Добавляем историю остатков по складам
+      if (sortedHistory.length > 1) {
+        const warehouseHistorySection = document.createElement('div');
+        warehouseHistorySection.className = 'history-section';
+        
+        const warehouseHistoryTitle = document.createElement('h4');
+        warehouseHistoryTitle.className = 'history-title';
+        warehouseHistoryTitle.textContent = 'История остатков по складам';
+        warehouseHistorySection.appendChild(warehouseHistoryTitle);
+        
+        // Создаем таблицу с историей остатков по складам
+        const warehouseHistoryTable = document.createElement('table');
+        warehouseHistoryTable.className = 'history-table warehouse-history-table';
+        
+        // Собираем все склады, которые встречались в сохранениях
+        const allWarehouses = new Set();
+        const warehouseDataHistory = [];
+        
+        sortedHistory.forEach((entry) => {
+          // Проверяем, что есть сохраненные данные о размерах и складах
+          if (entry.savedData && entry.savedData.sizes) {
+            // Для каждого сохранения готовим данные по складам
+            const warehouseData = {};
+            
+            entry.savedData.sizes.forEach(size => {
+              if (size.stocks) {
+                size.stocks.forEach(stock => {
+                  const warehouseId = stock.wh;
+                  const warehouseName = WAREHOUSES[warehouseId] || `Склад ${warehouseId}`;
+                  allWarehouses.add(warehouseName);
+                  
+                  if (!warehouseData[warehouseName]) {
+                    warehouseData[warehouseName] = 0;
+                  }
+                  
+                  warehouseData[warehouseName] += stock.qty;
+                });
+              }
+            });
+            
+            // Добавляем в массив данные с датой для дальнейшей обработки
+            warehouseDataHistory.push({
+              date: entry.date,
+              warehouses: warehouseData
+            });
+          }
+        });
+        
+        // Если есть данные о складах
+        if (allWarehouses.size > 0 && warehouseDataHistory.length > 0) {
+          // Формируем заголовок таблицы
+          const headerRow = document.createElement('tr');
+          headerRow.innerHTML = '<th>Дата</th>';
+          
+          // Добавляем колонки для каждого склада (берем только топ-10 по популярности)
+          const warehousesArray = Array.from(allWarehouses);
+          const topWarehouses = warehousesArray.slice(0, 10);
+          
+          topWarehouses.forEach(warehouseName => {
+            // Создаем сокращенное имя склада для заголовка
+            let shortName = warehouseName.replace('СЦ ', '').split(' ')[0];
+            headerRow.innerHTML += `<th title="${warehouseName}">${shortName}</th>`;
+          });
+          
+          if (warehousesArray.length > 10) {
+            headerRow.innerHTML += '<th>Другие</th>';
+          }
+          
+          headerRow.innerHTML += '<th>Всего</th>';
+          
+          // Создаем и добавляем thead с заголовком
+          const thead = document.createElement('thead');
+          thead.appendChild(headerRow);
+          warehouseHistoryTable.appendChild(thead);
+          
+          // Создаем tbody
+          const warehouseTbody = document.createElement('tbody');
+          
+          // Добавляем строки с историей остатков
+          warehouseDataHistory.forEach((entry) => {
+            const row = document.createElement('tr');
+            
+            // Форматируем дату
+            const date = new Date(entry.date);
+            const formattedDate = `${date.toLocaleDateString()} ${date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}`;
+            
+            row.innerHTML = `<td>${formattedDate}</td>`;
+            
+            // Для каждого склада из топ-10 добавляем его количество
+            let totalQty = 0;
+            let otherWarehousesQty = 0;
+            
+            topWarehouses.forEach(warehouseName => {
+              const qty = entry.warehouses[warehouseName] || 0;
+              totalQty += qty;
+              row.innerHTML += `<td>${qty}</td>`;
+            });
+            
+            // Если есть склады помимо топ-10, группируем их в "Другие"
+            if (warehousesArray.length > 10) {
+              warehousesArray.slice(10).forEach(warehouseName => {
+                otherWarehousesQty += entry.warehouses[warehouseName] || 0;
+              });
+              totalQty += otherWarehousesQty;
+              row.innerHTML += `<td>${otherWarehousesQty}</td>`;
+            }
+            
+            // Добавляем общее количество
+            row.innerHTML += `<td><strong>${totalQty}</strong></td>`;
+            
+            warehouseTbody.appendChild(row);
+          });
+          
+          warehouseHistoryTable.appendChild(warehouseTbody);
+          warehouseHistorySection.appendChild(warehouseHistoryTable);
+          historyInfo.appendChild(warehouseHistorySection);
+        }
+      }
+      
+      // Добавляем детальную историю остатков по размерам и складам
+      if (sortedHistory.length > 1) {
+        const sizeWarehouseHistorySection = document.createElement('div');
+        sizeWarehouseHistorySection.className = 'history-section';
+        
+        const sizeWarehouseHistoryTitle = document.createElement('h4');
+        sizeWarehouseHistoryTitle.className = 'history-title';
+        sizeWarehouseHistoryTitle.textContent = 'Детальная история остатков';
+        sizeWarehouseHistorySection.appendChild(sizeWarehouseHistoryTitle);
+        
+        // Выбор даты
+        const dateSelector = document.createElement('select');
+        dateSelector.className = 'date-selector';
+        dateSelector.style.margin = '10px 0';
+        dateSelector.style.width = '100%';
+        dateSelector.style.padding = '5px';
+        
+        // Добавляем опции с датами
+        sortedHistory.forEach((entry, index) => {
+          if (!entry.savedData || !entry.savedData.sizes) return;
+          
+          const date = new Date(entry.date);
+          const formattedDate = `${date.toLocaleDateString()} ${date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}`;
+          
+          const option = document.createElement('option');
+          option.value = index;
+          option.textContent = formattedDate;
+          dateSelector.appendChild(option);
+        });
+        
+        sizeWarehouseHistorySection.appendChild(dateSelector);
+        
+        // Добавляем кнопки для переключения размера таблицы
+        const tableSizeControls = document.createElement('div');
+        tableSizeControls.className = 'table-size-controls';
+        
+        const normalSizeBtn = document.createElement('button');
+        normalSizeBtn.className = 'table-size-btn active';
+        normalSizeBtn.textContent = 'Обычный';
+        normalSizeBtn.addEventListener('click', function() {
+          this.classList.add('active');
+          compactSizeBtn.classList.remove('active');
+          tableContainer.classList.remove('mini-table-view');
+        });
+        
+        const compactSizeBtn = document.createElement('button');
+        compactSizeBtn.className = 'table-size-btn';
+        compactSizeBtn.textContent = 'Компактный';
+        compactSizeBtn.addEventListener('click', function() {
+          this.classList.add('active');
+          normalSizeBtn.classList.remove('active');
+          tableContainer.classList.add('mini-table-view');
+        });
+        
+        tableSizeControls.appendChild(normalSizeBtn);
+        tableSizeControls.appendChild(compactSizeBtn);
+        sizeWarehouseHistorySection.appendChild(tableSizeControls);
+        
+        // Создаем контейнер для таблицы
+        const tableContainer = document.createElement('div');
+        tableContainer.className = 'table-container';
+        tableContainer.style.maxHeight = '300px';
+        tableContainer.style.overflowY = 'auto';
+        
+        // Функция для отображения детальной истории по размерам и складам
+        function displaySizeWarehouseHistory(historyIndex) {
+          const entry = sortedHistory[historyIndex];
+          if (!entry.savedData || !entry.savedData.sizes) {
+            tableContainer.innerHTML = '<div class="no-data">Нет данных для выбранной даты</div>';
+            return;
+          }
+          
+          // Создаем модальное окно для детальной информации о складе
+          const modalContainer = document.createElement('div');
+          modalContainer.className = 'warehouse-modal-container hidden';
+          modalContainer.innerHTML = `
+            <div class="warehouse-modal">
+              <div class="warehouse-modal-header">
+                <h4>Информация о складе</h4>
+                <span class="warehouse-modal-close">&times;</span>
+              </div>
+              <div class="warehouse-modal-content"></div>
+            </div>
+          `;
+          tableContainer.appendChild(modalContainer);
+          
+          // Функция для закрытия модального окна
+          function closeWarehouseModal() {
+            modalContainer.classList.add('hidden');
+          }
+          
+          // Привязываем обработчик к кнопке закрытия
+          modalContainer.querySelector('.warehouse-modal-close').addEventListener('click', closeWarehouseModal);
+          
+          // Обработчик клика вне модального окна
+          modalContainer.addEventListener('click', function(event) {
+            if (event.target === modalContainer) {
+              closeWarehouseModal();
+            }
+          });
+          
+          // Получаем предыдущее сохранение для сравнения
+          let previousEntry = null;
+          // Если у нас не первая запись в истории и есть следующая запись хронологически
+          if (historyIndex < sortedHistory.length - 1) {
+            previousEntry = sortedHistory[historyIndex + 1];
+          }
+          
+          // Проверяем, существуют ли данные для сравнения
+          console.log("Current entry date:", new Date(entry.date).toLocaleString());
+          if (previousEntry) {
+            console.log("Previous entry date:", new Date(previousEntry.date).toLocaleString());
+          }
+          
+          // Создаем таблицу
+          const table = document.createElement('table');
+          table.className = 'size-warehouse-history-table';
+          
+          // Получаем все размеры и склады
+          const sizes = Array.from(new Set(entry.savedData.sizes.map(size => size.name))).sort();
+          
+          // Получаем все уникальные склады для текущего сохранения
+          const warehouses = new Map();
+          entry.savedData.sizes.forEach(size => {
+            size.stocks.forEach(stock => {
+              if (!warehouses.has(stock.wh)) {
+                // Получаем информацию о складе из справочника WAREHOUSES и WAREHOUSE_DETAILS
+                let warehouseInfo = {
+                  name: stock.name || `Склад ${stock.wh}`,
+                  type: stock.type || '',
+                  location: stock.location || ''
+                };
+                
+                // Проверяем, есть ли информация о складе в глобальном справочнике
+                if (typeof WAREHOUSES !== 'undefined' && WAREHOUSES[stock.wh]) {
+                  warehouseInfo.name = WAREHOUSES[stock.wh];
+                }
+                
+                // Проверяем наличие детальной информации о складе
+                if (typeof WAREHOUSE_DETAILS !== 'undefined' && WAREHOUSE_DETAILS[stock.wh]) {
+                  const details = WAREHOUSE_DETAILS[stock.wh];
+                  if (details.name) warehouseInfo.name = details.name;
+                  if (details.city) warehouseInfo.city = details.city;
+                  if (details.address) warehouseInfo.location = details.address;
+                  if (details.delivery_time) warehouseInfo.delivery_time = details.delivery_time;
+                  if (details.is_fbw) warehouseInfo.is_fbw = details.is_fbw;
+                  if (details.is_fbs) warehouseInfo.is_fbs = details.is_fbs;
+                  if (details.rating) warehouseInfo.rating = details.rating;
+                }
+                
+                warehouses.set(stock.wh, warehouseInfo);
+              }
+            });
+          });
+          
+          // Создаем заголовок таблицы
+          const thead = document.createElement('thead');
+          const headerRow = document.createElement('tr');
+          
+          // Угловая ячейка
+          const cornerCell = document.createElement('th');
+          cornerCell.className = 'corner';
+          cornerCell.textContent = 'Склад / Размер';
+          headerRow.appendChild(cornerCell);
+          
+          // Добавляем заголовки с размерами
+          sizes.forEach(size => {
+            const sizeHeader = document.createElement('th');
+            sizeHeader.className = 'size-header';
+            sizeHeader.textContent = size;
+            headerRow.appendChild(sizeHeader);
+          });
+          
+          thead.appendChild(headerRow);
+          table.appendChild(thead);
+          
+          // Создаем тело таблицы
+          const tbody = document.createElement('tbody');
+          
+          // Для каждого склада создаем строку
+          warehouses.forEach((warehouseInfo, warehouseId) => {
+            const row = document.createElement('tr');
+            
+            // Ячейка с названием склада
+            const warehouseCell = document.createElement('td');
+            warehouseCell.className = 'warehouse-header warehouse-tooltip';
+            
+            // Добавляем ID склада и полное название как всплывающую подсказку
+            const warehouseIdSpan = document.createElement('span');
+            warehouseIdSpan.textContent = `${warehouseInfo.name || `Склад ${warehouseId}`}`;
+            warehouseIdSpan.className = 'warehouse-id-label';
+            
+            // Формируем расширенную подсказку
+            let tooltipText = warehouseInfo.name || `Склад ${warehouseId}`;
+            tooltipText += ` (ID: ${warehouseId})`;
+            
+            if (warehouseInfo.city) {
+              tooltipText += `\nГород: ${warehouseInfo.city}`;
+            }
+            
+            if (warehouseInfo.location) {
+              tooltipText += `\nАдрес: ${warehouseInfo.location}`;
+            }
+            
+            if (warehouseInfo.delivery_time) {
+              tooltipText += `\nВремя доставки: ${warehouseInfo.delivery_time} ч.`;
+            }
+            
+            warehouseIdSpan.title = tooltipText; // Расширенная подсказка
+            
+            // Добавляем иконку информации
+            const infoIcon = document.createElement('span');
+            infoIcon.className = 'info-icon';
+            infoIcon.textContent = 'ℹ';
+            
+            // Обработчик клика по иконке для показа модального окна с детальной информацией
+            infoIcon.addEventListener('click', function(event) {
+              event.stopPropagation(); // Предотвращаем всплытие события
+              
+              const modalContent = modalContainer.querySelector('.warehouse-modal-content');
+              modalContent.innerHTML = ''; // Очищаем содержимое
+              
+              // Заголовок - название склада и ID
+              const warehouseTitle = document.createElement('h5');
+              warehouseTitle.className = 'warehouse-modal-title';
+              warehouseTitle.textContent = warehouseInfo.name || `Склад ${warehouseId}`;
+              modalContent.appendChild(warehouseTitle);
+              
+              // ID склада
+              const warehouseIdInfo = document.createElement('p');
+              warehouseIdInfo.className = 'warehouse-modal-id';
+              warehouseIdInfo.textContent = `ID склада: ${warehouseId}`;
+              modalContent.appendChild(warehouseIdInfo);
+              
+              // Дополнительная информация о складе
+              const additionalInfo = document.createElement('div');
+              additionalInfo.className = 'warehouse-modal-additional';
+              
+              if (warehouseInfo.city) {
+                const cityInfo = document.createElement('p');
+                cityInfo.innerHTML = `<strong>Город:</strong> ${warehouseInfo.city}`;
+                additionalInfo.appendChild(cityInfo);
+              }
+              
+              if (warehouseInfo.location) {
+                const locationInfo = document.createElement('p');
+                locationInfo.innerHTML = `<strong>Адрес:</strong> ${warehouseInfo.location}`;
+                additionalInfo.appendChild(locationInfo);
+              }
+              
+              if (warehouseInfo.delivery_time) {
+                const deliveryInfo = document.createElement('p');
+                deliveryInfo.innerHTML = `<strong>Время доставки:</strong> ${warehouseInfo.delivery_time} часов`;
+                additionalInfo.appendChild(deliveryInfo);
+              }
+              
+              if (warehouseInfo.is_fbw !== undefined || warehouseInfo.is_fbs !== undefined) {
+                const typeInfo = document.createElement('p');
+                let typeText = '<strong>Тип:</strong> ';
+                let types = [];
+                
+                if (warehouseInfo.is_fbw) types.push('FBW');
+                if (warehouseInfo.is_fbs) types.push('FBS');
+                
+                typeText += types.join(', ') || 'Нет данных';
+                typeInfo.innerHTML = typeText;
+                additionalInfo.appendChild(typeInfo);
+              }
+              
+              if (warehouseInfo.rating) {
+                const ratingInfo = document.createElement('p');
+                ratingInfo.innerHTML = `<strong>Рейтинг:</strong> ${warehouseInfo.rating}`;
+                additionalInfo.appendChild(ratingInfo);
+              }
+              
+              if (additionalInfo.childNodes.length > 0) {
+                modalContent.appendChild(additionalInfo);
+              }
+              
+              // Информация о доступности размеров на этом складе
+              const sizesInfo = document.createElement('div');
+              sizesInfo.className = 'warehouse-modal-sizes';
+              
+              const sizesTitle = document.createElement('h6');
+              sizesTitle.textContent = 'Наличие по размерам:';
+              sizesInfo.appendChild(sizesTitle);
+              
+              const sizesList = document.createElement('ul');
+              
+              // Получаем данные о наличии размеров на этом складе
+              let hasAnySizes = false;
+              sizes.forEach(sizeName => {
+                const sizeData = entry.savedData.sizes.find(s => s.name === sizeName);
+                if (sizeData) {
+                  const stockData = sizeData.stocks.find(s => s.wh === warehouseId);
+                  if (stockData && stockData.qty > 0) {
+                    hasAnySizes = true;
+                    const sizeItem = document.createElement('li');
+                    sizeItem.innerHTML = `<span class="size-name">${sizeName}</span>: <span class="size-qty">${stockData.qty}</span>`;
+                    sizesList.appendChild(sizeItem);
+                  }
+                }
+              });
+              
+              if (!hasAnySizes) {
+                const noSizesInfo = document.createElement('p');
+                noSizesInfo.className = 'no-sizes';
+                noSizesInfo.textContent = 'Нет доступных размеров на данном складе';
+                sizesInfo.appendChild(noSizesInfo);
+              } else {
+                sizesInfo.appendChild(sizesList);
+              }
+              
+              modalContent.appendChild(sizesInfo);
+              
+              // Показываем модальное окно
+              modalContainer.classList.remove('hidden');
+            });
+            
+            warehouseCell.appendChild(warehouseIdSpan);
+            warehouseCell.appendChild(infoIcon);
+            
+            row.appendChild(warehouseCell);
+            
+            // Для каждого размера добавляем количество
+            sizes.forEach(sizeName => {
+              const cell = document.createElement('td');
+              
+              // Ищем размер
+              const sizeData = entry.savedData.sizes.find(s => s.name === sizeName);
+              if (sizeData) {
+                // Ищем склад для этого размера
+                const stockData = sizeData.stocks.find(s => s.wh === warehouseId);
+                if (stockData) {
+                  // Текущее количество
+                  const currentQty = stockData.qty;
+                  let dynIcon = '';
+                  let dynClass = '';
+                  
+                  // Проверяем наличие предыдущих данных для сравнения
+                  if (previousEntry && previousEntry.savedData && previousEntry.savedData.sizes) {
+                    const prevSizeData = previousEntry.savedData.sizes.find(s => s.name === sizeName);
+                    if (prevSizeData) {
+                      const prevStockData = prevSizeData.stocks.find(s => s.wh === warehouseId);
+                      if (prevStockData) {
+                        const prevQty = prevStockData.qty;
+                        
+                        if (currentQty > prevQty) {
+                          dynIcon = '▲'; // Заменяем на заполненную стрелку вверх
+                          dynClass = 'price-down'; // Используем существующий класс (зеленый)
+                        } else if (currentQty < prevQty) {
+                          dynIcon = '▼'; // Заменяем на заполненную стрелку вниз
+                          dynClass = 'price-up'; // Используем существующий класс (красный)
+                        } else {
+                          dynIcon = '●'; // Заменяем на точку (без изменений)
+                          dynClass = 'price-same'; // Используем существующий класс (серый)
+                        }
+                      } else {
+                        // Размер был, но склада не было
+                        dynIcon = '✚'; // Заменяем на плюс
+                        dynClass = 'price-down'; // Зеленый
+                      }
+                    } else {
+                      // Нового размера не было
+                      dynIcon = '✚'; // Заменяем на плюс
+                      dynClass = 'price-down'; // Зеленый
+                    }
+                  } else {
+                    // Нет предыдущих данных
+                    dynIcon = '●'; // Заменяем на точку для первого сохранения
+                    dynClass = 'price-same';
+                  }
+                  
+                  // Создаем видимый индикатор изменения
+                  const indicator = document.createElement('span');
+                  indicator.className = `change-indicator ${dynClass}`;
+                  indicator.textContent = dynIcon;
+                  
+                  // Очищаем ячейку и добавляем текст + индикатор
+                  cell.textContent = currentQty;
+                  cell.appendChild(indicator);
+                  
+                  // Цветовая индикация в зависимости от количества
+                  if (currentQty > 10) {
+                    cell.style.color = 'var(--success-color)';
+                    cell.style.fontWeight = '600';
+                  } else if (currentQty > 0) {
+                    cell.style.color = 'var(--warning-color)';
+                    cell.style.fontWeight = '600';
+                  } else {
+                    cell.style.color = 'var(--light-text)';
+                  }
+                } else {
+                  // Размер есть, но склада нет
+                  let dynIcon = '';
+                  let dynClass = '';
+                  
+                  // Проверяем, был ли этот склад для этого размера раньше
+                  if (previousEntry && previousEntry.savedData && previousEntry.savedData.sizes) {
+                    const prevSizeData = previousEntry.savedData.sizes.find(s => s.name === sizeName);
+                    if (prevSizeData) {
+                      const prevStockData = prevSizeData.stocks.find(s => s.wh === warehouseId);
+                      if (prevStockData && prevStockData.qty > 0) {
+                        dynIcon = '▼'; // Стрелка вниз (было и исчезло)
+                        dynClass = 'price-up'; // Красный
+                        
+                        // Создаем видимый индикатор изменения
+                        const indicator = document.createElement('span');
+                        indicator.className = `change-indicator ${dynClass}`;
+                        indicator.textContent = dynIcon;
+                        
+                        cell.textContent = '0 ';
+                        cell.appendChild(indicator);
+                      } else {
+                        cell.textContent = '0';
+                      }
+                    } else {
+                      cell.textContent = '0';
+                    }
+                  } else {
+                    cell.textContent = '0';
+                  }
+                  
+                  cell.style.color = 'var(--light-text)';
+                }
+              } else {
+                // Размера нет совсем
+                let dynIcon = '';
+                let dynClass = '';
+                
+                // Проверяем, был ли этот размер раньше
+                if (previousEntry && previousEntry.savedData && previousEntry.savedData.sizes) {
+                  const prevSizeData = previousEntry.savedData.sizes.find(s => s.name === sizeName);
+                  if (prevSizeData) {
+                    const prevStockData = prevSizeData.stocks.find(s => s.wh === warehouseId);
+                    if (prevStockData && prevStockData.qty > 0) {
+                      dynIcon = '▼'; // Стрелка вниз (было и исчезло)
+                      dynClass = 'price-up'; // Красный
+                      
+                      // Создаем видимый индикатор изменения
+                      const indicator = document.createElement('span');
+                      indicator.className = `change-indicator ${dynClass}`;
+                      indicator.textContent = dynIcon;
+                      
+                      cell.textContent = '- ';
+                      cell.appendChild(indicator);
+                    } else {
+                      cell.textContent = '-';
+                    }
+                  } else {
+                    cell.textContent = '-';
+                  }
+                } else {
+                  cell.textContent = '-';
+                }
+                
+                cell.style.color = 'var(--light-text)';
+              }
+              
+              row.appendChild(cell);
+            });
+            
+            tbody.appendChild(row);
+          });
+          
+          table.appendChild(tbody);
+          tableContainer.innerHTML = '';
+          tableContainer.appendChild(table);
+        }
+        
+        // Обработчик изменения выбранной даты
+        dateSelector.addEventListener('change', function() {
+          displaySizeWarehouseHistory(parseInt(this.value));
+        });
+        
+        sizeWarehouseHistorySection.appendChild(tableContainer);
+        historyInfo.appendChild(sizeWarehouseHistorySection);
+        
+        // Отображаем данные для первой даты
+        if (dateSelector.options.length > 0) {
+          displaySizeWarehouseHistory(0);
+        }
+      }
+      
+      // Добавляем информацию о дате первого сохранения
+      if (savedProduct.firstSaved) {
+        const firstSavedDate = new Date(savedProduct.firstSaved);
+        const formattedFirstSaved = `${firstSavedDate.toLocaleDateString()} ${firstSavedDate.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}`;
+        
+        const savedInfo = document.createElement('div');
+        savedInfo.className = 'saved-info';
+        savedInfo.innerHTML = `<p>Товар впервые сохранен: ${formattedFirstSaved}</p>`;
+        
+        historyInfo.appendChild(savedInfo);
+      }
+      
+      // Добавляем информацию о количестве сохранений
+      const savesCount = savedProduct.priceHistory.length;
+      const savesInfo = document.createElement('div');
+      savesInfo.className = 'saves-info';
+      savesInfo.innerHTML = `<p>Всего сохранений: ${savesCount}</p>`;
+      
+      historyInfo.appendChild(savesInfo);
+    });
   }
 
   // Вспомогательные функции для управления UI
@@ -964,6 +1918,10 @@ document.addEventListener('DOMContentLoaded', () => {
     productFeedbacks.textContent = '';
     warehouseDistribution.innerHTML = '';
     logisticsInfo.innerHTML = '';
+    historyInfo.innerHTML = '';
+    
+    // Сбрасываем состояние кнопки избранного
+    addToFavoritesBtn.classList.remove('active');
   }
   
   // Функция загрузки избранных товаров из хранилища
@@ -1061,4 +2019,160 @@ document.addEventListener('DOMContentLoaded', () => {
       });
     }
   }
-}); 
+  
+  // Функция синхронизации избранного
+  async function syncFavorites() {
+    // Проверяем, есть ли избранные товары
+    if (favoriteProducts.length === 0) {
+      alert('Нет избранных товаров для синхронизации.');
+      return;
+    }
+    
+    // Изменяем состояние кнопки
+    syncFavoritesBtn.classList.add('syncing');
+    syncFavoritesBtn.disabled = true;
+    syncFavoritesBtn.textContent = 'Синхронизация...';
+    
+    // Создаем переменную для отслеживания прогресса синхронизации
+    let syncedCount = 0;
+    const totalCount = favoriteProducts.length;
+    
+    // Создаем массив ошибок при синхронизации
+    const errors = [];
+    
+    // Последовательно обрабатываем каждый товар
+    for (const product of favoriteProducts) {
+      try {
+        // Обновляем текст кнопки с прогрессом
+        syncFavoritesBtn.textContent = `Синхронизация (${syncedCount + 1}/${totalCount})...`;
+        
+        // Получаем полные данные о товаре
+        await new Promise((resolve, reject) => {
+          const apiUrl = `https://card.wb.ru/cards/detail?appType=0&curr=rub&dest=-1257786&spp=30&nm=${product.id}`;
+          
+          fetch(apiUrl)
+            .then(response => {
+              if (!response.ok) {
+                throw new Error(`Ошибка HTTP: ${response.status}`);
+              }
+              return response.json();
+            })
+            .then(data => {
+              if (!data.data || !data.data.products || data.data.products.length === 0) {
+                throw new Error(`Товар не найден: ${product.id}`);
+              }
+              
+              const fullProduct = data.data.products[0];
+              
+              // Сохраняем товар в историю
+              chrome.storage.local.get({ savedProducts: [] }, (result) => {
+                const savedProducts = result.savedProducts;
+                
+                // Проверяем, существует ли уже такой артикул
+                const existingIndex = savedProducts.findIndex(p => p.id === fullProduct.id);
+                
+                // Текущая дата для истории
+                const currentDate = new Date().toISOString();
+                const currentPrice = fullProduct.salePriceU / 100;
+                
+                if (existingIndex !== -1) {
+                  // Обновляем существующий товар
+                  // Добавляем информацию о цене в историю
+                  if (!savedProducts[existingIndex].priceHistory) {
+                    savedProducts[existingIndex].priceHistory = [];
+                  }
+                  
+                  // Добавляем новую запись в историю цен
+                  savedProducts[existingIndex].priceHistory.push({
+                    date: currentDate,
+                    price: currentPrice,
+                    savedData: {
+                      // Добавляем ключевые данные для отслеживания истории
+                      feedbacks: fullProduct.feedbacks,
+                      sizes: fullProduct.sizes
+                    }
+                  });
+                  
+                  // Добавляем информацию об отзывах в историю
+                  if (!savedProducts[existingIndex].feedbacksHistory) {
+                    savedProducts[existingIndex].feedbacksHistory = [];
+                  }
+                  
+                  savedProducts[existingIndex].feedbacksHistory.push({
+                    date: currentDate,
+                    count: fullProduct.feedbacks
+                  });
+                  
+                  // Обновляем данные товара
+                  savedProducts[existingIndex] = {
+                    ...fullProduct,
+                    priceHistory: savedProducts[existingIndex].priceHistory,
+                    feedbacksHistory: savedProducts[existingIndex].feedbacksHistory,
+                    lastUpdated: currentDate
+                  };
+                } else {
+                  // Добавляем новый товар
+                  savedProducts.push({
+                    ...fullProduct,
+                    priceHistory: [{
+                      date: currentDate,
+                      price: currentPrice,
+                      savedData: {
+                        // Добавляем ключевые данные для отслеживания истории
+                        feedbacks: fullProduct.feedbacks,
+                        sizes: fullProduct.sizes
+                      }
+                    }],
+                    feedbacksHistory: [{
+                      date: currentDate,
+                      count: fullProduct.feedbacks
+                    }],
+                    firstSaved: currentDate,
+                    lastUpdated: currentDate
+                  });
+                }
+                
+                chrome.storage.local.set({ savedProducts }, () => {
+                  syncedCount++;
+                  resolve();
+                });
+              });
+            })
+            .catch(error => {
+              console.error(`Ошибка при синхронизации товара ${product.id}:`, error);
+              errors.push({
+                id: product.id,
+                name: product.name,
+                error: error.message
+              });
+              resolve(); // Продолжаем синхронизацию, даже если произошла ошибка
+            });
+        });
+        
+        // Добавляем небольшую задержку между запросами, чтобы не перегружать сервер
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
+      } catch (error) {
+        console.error(`Ошибка при синхронизации товара ${product.id}:`, error);
+        errors.push({
+          id: product.id,
+          name: product.name,
+          error: error.message
+        });
+      }
+    }
+    
+    // Восстанавливаем состояние кнопки
+    syncFavoritesBtn.classList.remove('syncing');
+    syncFavoritesBtn.disabled = false;
+    syncFavoritesBtn.textContent = '↻ Синхронизировать';
+    
+    // Показываем сообщение о завершении синхронизации
+    if (errors.length === 0) {
+      alert(`Синхронизация завершена. Сохранено ${syncedCount} товаров.`);
+    } else {
+      alert(`Синхронизация завершена с ошибками. Сохранено ${syncedCount} из ${totalCount} товаров. Не удалось сохранить ${errors.length} товаров.`);
+      console.error('Товары с ошибками:', errors);
+    }
+  }
+}); // Закрывающая скобка обработчика DOMContentLoaded 

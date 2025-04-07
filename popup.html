@@ -9,7 +9,9 @@
 <body>
   <div class="container">
     <header>
-      <h1>WB Аналитика</h1>
+      <div class="logo">
+        <img src="LOGO.png" alt="WB Аналитика" class="header-logo">
+      </div>
       <nav class="main-menu">
         <ul>
           <li class="active" data-tab="search-tab">Поиск</li>
@@ -78,6 +80,14 @@
           <div class="section-content" id="logisticsInfo"></div>
         </div>
         
+        <div class="section collapsible">
+          <div class="section-header">
+            <h3>История</h3>
+            <button class="toggle-button">Свернуть</button>
+          </div>
+          <div class="section-content" id="historyInfo"></div>
+        </div>
+        
         <div class="button-container">
           <button id="saveBtn">Сохранить в историю</button>
           <button id="addToFavoritesBtn" class="icon-button"><span class="paperclip-icon">📎</span></button>
@@ -115,6 +125,7 @@
         <h3>Избранные товары</h3>
         <div class="favorites-tools">
           <input type="text" id="favoritesSearch" placeholder="Поиск в избранном...">
+          <button id="syncFavoritesBtn" class="sync-button" title="Синхронизировать историю всех избранных товаров">↻ Синхронизировать</button>
         </div>
       </div>
       

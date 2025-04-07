@@ -56,6 +56,19 @@ header {
   align-items: center;
 }
 
+.logo {
+  display: flex;
+  align-items: center;
+}
+
+.header-logo {
+  height: 40px;
+  width: auto;
+  max-width: 160px;
+  object-fit: contain;
+  margin-right: var(--space-md);
+}
+
 h1 {
   font-size: 18px;
   font-weight: 500;
@@ -503,6 +516,271 @@ hr {
 
 .price-same {
   color: var(--light-text);
+}
+
+/* Стили для истории товара - более компактный и современный вид */
+.history-section {
+  margin-bottom: var(--space-md);
+  background-color: white;
+  border-radius: var(--card-radius);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+  overflow: hidden;
+}
+
+.history-title {
+  margin: 0;
+  padding: 10px 12px;
+  font-weight: 600;
+  color: var(--text-color);
+  font-size: 14px;
+  background-color: var(--secondary-color);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.history-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+  margin-bottom: 0;
+  table-layout: fixed;
+}
+
+.history-table th, 
+.history-table td {
+  padding: 6px 8px;
+  text-align: left;
+  border: none;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.history-table th {
+  font-weight: 600;
+  background-color: var(--secondary-color);
+  color: var(--primary-color);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.history-table tr:last-child td {
+  border-bottom: none;
+}
+
+.history-table tr:nth-child(odd) {
+  background-color: rgba(0,0,0,0.01);
+}
+
+.history-table tr:hover {
+  background-color: rgba(0,0,0,0.03);
+}
+
+/* Специальные стили для таблиц с горизонтальной прокруткой */
+.stock-history-table,
+.warehouse-history-table {
+  width: 100%;
+  overflow-x: auto;
+  display: block;
+  max-width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  table-layout: auto;
+  margin-bottom: 0;
+  font-size: 11px;
+}
+
+/* Общие стили для ячеек в таблицах с прокруткой */
+.stock-history-table th,
+.stock-history-table td,
+.warehouse-history-table th,
+.warehouse-history-table td {
+  min-width: 50px;
+  max-width: 70px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-align: center;
+  padding: 5px 6px;
+  border-right: 1px solid rgba(0,0,0,0.04);
+}
+
+/* Стили для первой колонки (даты) */
+.stock-history-table th:first-child,
+.stock-history-table td:first-child,
+.warehouse-history-table th:first-child,
+.warehouse-history-table td:first-child {
+  min-width: 95px;
+  text-align: left;
+  position: sticky;
+  left: 0;
+  background-color: white;
+  z-index: 2;
+  box-shadow: 2px 0 5px -2px rgba(0,0,0,0.1);
+}
+
+/* Стили для заголовка первой колонки */
+.stock-history-table th:first-child,
+.warehouse-history-table th:first-child {
+  background-color: var(--secondary-color);
+  z-index: 3;
+  box-shadow: 2px 0 5px -2px rgba(0,0,0,0.2);
+}
+
+/* Стили для первой колонки в нечетных строках */
+.stock-history-table tr:nth-child(odd) td:first-child,
+.warehouse-history-table tr:nth-child(odd) td:first-child {
+  background-color: rgba(0,0,0,0.01);
+}
+
+/* Стили для последней колонки в таблице складов (Всего) */
+.warehouse-history-table th:last-child,
+.warehouse-history-table td:last-child {
+  font-weight: 600;
+  background-color: rgba(0,0,0,0.02);
+  position: sticky;
+  right: 0;
+  z-index: 2;
+  box-shadow: -2px 0 5px -2px rgba(0,0,0,0.1);
+  color: var(--primary-color);
+  min-width: 60px;
+}
+
+/* Стиль для заголовка последней колонки */
+.warehouse-history-table th:last-child {
+  z-index: 3;
+  box-shadow: -2px 0 5px -2px rgba(0,0,0,0.2);
+}
+
+/* Поведение при наведении для таблиц с прокруткой */
+.stock-history-table tr:hover td,
+.warehouse-history-table tr:hover td {
+  background-color: rgba(0,0,0,0.04);
+}
+
+.stock-history-table tr:hover td:first-child,
+.warehouse-history-table tr:hover td:first-child {
+  background-color: rgba(0,0,0,0.05);
+}
+
+.warehouse-history-table tr:hover td:last-child {
+  background-color: rgba(0,0,0,0.07);
+}
+
+/* Стили для новой таблицы детальной истории размеров по складам */
+.size-warehouse-history-table {
+  width: 100%;
+  overflow-x: auto;
+  display: block;
+  max-width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  table-layout: auto;
+  margin-bottom: 0;
+  font-size: 11px;
+}
+
+.size-warehouse-history-table th,
+.size-warehouse-history-table td {
+  padding: 4px 5px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-align: center;
+  min-width: 40px;
+  border-right: 1px solid rgba(0,0,0,0.04);
+  border-bottom: 1px solid rgba(0,0,0,0.04);
+}
+
+.size-warehouse-history-table th {
+  background-color: var(--secondary-color);
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  font-weight: 600;
+  font-size: 11px;
+}
+
+.size-warehouse-history-table th.corner {
+  z-index: 4;
+  left: 0;
+}
+
+.size-warehouse-history-table th.size-header {
+  z-index: 3;
+}
+
+.size-warehouse-history-table th.warehouse-header,
+.size-warehouse-history-table td:first-child {
+  position: sticky;
+  left: 0;
+  min-width: 95px;
+  text-align: left;
+  background-color: white;
+  z-index: 2;
+  box-shadow: 2px 0 4px -2px rgba(0,0,0,0.1);
+}
+
+.size-warehouse-history-table th.warehouse-header {
+  background-color: var(--secondary-color);
+  z-index: 3;
+}
+
+.size-warehouse-history-table tr:nth-child(odd) td {
+  background-color: rgba(0,0,0,0.01);
+}
+
+.size-warehouse-history-table tr:nth-child(odd) td:first-child {
+  background-color: rgba(0,0,0,0.02);
+}
+
+.size-warehouse-history-table tr:hover td {
+  background-color: rgba(0,0,0,0.03);
+}
+
+.size-warehouse-history-table tr:hover td:first-child {
+  background-color: rgba(0,0,0,0.05);
+}
+
+.saved-info, .saves-info {
+  font-size: 12px;
+  color: var(--light-text);
+  margin: 0;
+  padding: 8px 12px;
+  background-color: var(--secondary-color);
+  border-top: 1px solid var(--border-color);
+  display: flex;
+  justify-content: space-between;
+}
+
+/* Стили для селектора даты в детальной истории */
+.date-selector {
+  display: block;
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--card-radius);
+  background-color: white;
+  font-size: 12px;
+  color: var(--text-color);
+  margin: 8px 0 12px;
+  appearance: none;
+  background-image: url('data:image/svg+xml;utf8,<svg fill="%23555" height="24" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg"><path d="M7 10l5 5 5-5z"/><path d="M0 0h24v24H0z" fill="none"/></svg>');
+  background-repeat: no-repeat;
+  background-position: right 8px center;
+  background-size: 16px;
+}
+
+.date-selector:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 2px rgba(0, 120, 212, 0.1);
+}
+
+.table-container {
+  max-height: 300px;
+  overflow-y: auto;
+  border-radius: var(--card-radius);
+  border: 1px solid var(--border-color);
+  background-color: white;
 }
 
 /* Информация о логистике */
@@ -979,6 +1257,51 @@ hr {
   border-color: var(--primary-color);
 }
 
+/* Стили для кнопки синхронизации избранного */
+.sync-button {
+  border-radius: var(--card-radius);
+  margin-left: 10px;
+  font-size: 12px;
+  padding: 6px 12px;
+  background-color: white;
+  color: var(--primary-color);
+  border: 1px solid var(--border-color);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  transition: all 0.2s;
+}
+
+.sync-button:hover {
+  background-color: var(--secondary-color);
+  border-color: var(--primary-color);
+}
+
+.sync-button.syncing {
+  background-color: var(--secondary-color);
+  color: var(--primary-color);
+  border-color: var(--primary-color);
+  opacity: 0.7;
+  cursor: wait;
+}
+
+.sync-button.syncing::before {
+  content: "";
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border: 2px solid transparent;
+  border-top-color: var(--primary-color);
+  border-radius: 50%;
+  margin-right: 8px;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
 /* Стили для раздела избранное */
 .favorites-header {
   display: flex;
@@ -1117,4 +1440,289 @@ hr {
 /* При наличии иконки уменьшаем размер основных кнопок */
 .button-container button:not(.icon-button) {
   flex: 1;
+}
+
+/* Стили для индикаторов изменения */
+.size-warehouse-history-table .change-indicator {
+  display: inline-block;
+  margin-left: 4px;
+  font-size: 10px;
+  font-weight: bold;
+  vertical-align: middle;
+  width: 14px;
+  height: 14px;
+  line-height: 14px;
+  text-align: center;
+  border-radius: 50%;
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
+.size-warehouse-history-table .change-indicator.price-up {
+  background-color: rgba(229, 57, 53, 0.1);
+}
+
+.size-warehouse-history-table .change-indicator.price-down {
+  background-color: rgba(67, 160, 71, 0.1);
+}
+
+.size-warehouse-history-table .change-indicator.price-same {
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
+.size-warehouse-history-table td span {
+  display: inline-block;
+  margin-left: 2px;
+  font-size: 10px;
+  font-weight: normal;
+}
+
+.size-warehouse-history-table td {
+  position: relative;
+}
+
+.mini-table-view .size-warehouse-history-table .change-indicator {
+  width: 12px;
+  height: 12px;
+  line-height: 12px;
+  font-size: 9px;
+  margin-left: 2px;
+}
+
+/* Стили для маленьких таблиц */
+.mini-table-view .size-warehouse-history-table th,
+.mini-table-view .size-warehouse-history-table td {
+  padding: 3px 4px;
+  font-size: 10px;
+}
+
+.mini-table-view .size-warehouse-history-table th:first-child,
+.mini-table-view .size-warehouse-history-table td:first-child {
+  min-width: 80px;
+}
+
+.mini-table-view .size-warehouse-history-table td span {
+  font-size: 9px;
+}
+
+/* Кнопки переключения размера таблицы */
+.table-size-controls {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 8px;
+}
+
+.table-size-btn {
+  background: none;
+  border: 1px solid var(--border-color);
+  border-radius: var(--card-radius);
+  padding: 2px 8px;
+  font-size: 11px;
+  cursor: pointer;
+  margin-left: 5px;
+  color: var(--text-color);
+}
+
+.table-size-btn:hover {
+  background-color: var(--secondary-color);
+}
+
+.table-size-btn.active {
+  background-color: var(--primary-color);
+  color: white;
+  border-color: var(--primary-color);
+}
+
+/* Стили для всплывающих подсказок о складах */
+.warehouse-tooltip {
+  display: flex !important;
+  align-items: center;
+  gap: 4px;
+  cursor: help;
+}
+
+.warehouse-id-label {
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 80px;
+  text-align: left;
+  font-size: 10px;
+}
+
+.mini-table-view .warehouse-id-label {
+  max-width: 60px;
+  font-size: 9px;
+}
+
+.info-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background-color: rgba(0, 0, 0, 0.05);
+  color: var(--primary-color);
+  font-size: 9px;
+  opacity: 0.7;
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+.warehouse-tooltip:hover .info-icon {
+  opacity: 1;
+  background-color: rgba(0, 0, 0, 0.1);
+}
+
+/* Стиль для браузерных тултипов (title атрибут) */
+[title] {
+  position: relative;
+  cursor: help;
+}
+
+/* Компактный вид для всплывающих подсказок */
+.mini-table-view .warehouse-tooltip {
+  gap: 2px;
+}
+
+.mini-table-view .info-icon {
+  width: 12px;
+  height: 12px;
+  font-size: 8px;
+}
+
+/* Стили для модального окна с информацией о складе */
+.warehouse-modal-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.warehouse-modal-container.hidden {
+  display: none;
+}
+
+.warehouse-modal {
+  width: 85%;
+  max-width: 350px;
+  background-color: white;
+  border-radius: var(--card-radius);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.warehouse-modal-header {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border-color);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: var(--secondary-color);
+}
+
+.warehouse-modal-header h4 {
+  margin: 0;
+  color: var(--primary-color);
+  font-size: 16px;
+}
+
+.warehouse-modal-close {
+  font-size: 20px;
+  cursor: pointer;
+  color: var(--light-text);
+  line-height: 1;
+}
+
+.warehouse-modal-close:hover {
+  color: var(--danger-color);
+}
+
+.warehouse-modal-content {
+  padding: 16px;
+  overflow-y: auto;
+  max-height: calc(90vh - 60px);
+}
+
+.warehouse-modal-title {
+  font-size: 16px;
+  font-weight: 600;
+  margin: 0 0 4px 0;
+  color: var(--text-color);
+}
+
+.warehouse-modal-id {
+  font-size: 13px;
+  color: var(--light-text);
+  margin: 0 0 12px 0;
+}
+
+.warehouse-modal-additional {
+  margin: 12px 0;
+  padding: 12px;
+  background-color: var(--secondary-color);
+  border-radius: var(--card-radius);
+}
+
+.warehouse-modal-additional p {
+  margin: 0 0 8px 0;
+  font-size: 13px;
+}
+
+.warehouse-modal-additional p:last-child {
+  margin-bottom: 0;
+}
+
+.warehouse-modal-sizes {
+  margin-top: 16px;
+}
+
+.warehouse-modal-sizes h6 {
+  font-size: 14px;
+  margin: 0 0 8px 0;
+  color: var(--text-color);
+}
+
+.warehouse-modal-sizes ul {
+  list-style-type: none;
+  margin: 0;
+  padding: 0;
+}
+
+.warehouse-modal-sizes li {
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border-color);
+  font-size: 13px;
+}
+
+.warehouse-modal-sizes li:last-child {
+  border-bottom: none;
+}
+
+.warehouse-modal-sizes .size-name {
+  font-weight: 500;
+}
+
+.warehouse-modal-sizes .size-qty {
+  font-weight: 600;
+  color: var(--success-color);
+}
+
+.warehouse-modal-sizes .no-sizes {
+  font-style: italic;
+  color: var(--light-text);
+  text-align: center;
+  font-size: 13px;
 } 

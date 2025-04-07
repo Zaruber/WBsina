@@ -1,0 +1,26 @@
+{
+  "manifest_version": 3,
+  "name": "WB Аналитика",
+  "version": "1.0",
+  "description": "Конкурентный анализ товаров на Wildberries",
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "WB Аналитика"
+  },
+  "permissions": [
+    "activeTab",
+    "storage"
+  ],
+  "host_permissions": [
+    "https://card.wb.ru/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://*.wildberries.ru/*"],
+      "js": ["content.js"]
+    }
+  ]
+} 

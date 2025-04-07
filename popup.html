@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WB Аналитика</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>WB Аналитика</h1>
+      <nav class="main-menu">
+        <ul>
+          <li class="active" data-tab="search-tab">Поиск</li>
+          <li data-tab="warehouse-tab">Склады</li>
+          <li data-tab="favorites-tab">Избранное</li>
+        </ul>
+      </nav>
+    </header>
+    
+    <!-- Вкладка поиска товаров -->
+    <div id="search-tab" class="tab-content active">
+      <div class="search-container">
+        <input type="text" id="articleInput" placeholder="Введите артикул товара">
+        <button id="searchBtn">Искать</button>
+      </div>
+      
+      <div id="loadingIndicator" class="hidden">
+        <div class="spinner"></div>
+        <p>Загрузка данных...</p>
+      </div>
+      
+      <div id="productInfo" class="hidden">
+        <div class="product-header">
+          <div class="product-image">
+            <img id="productImage" src="" alt="Фото товара">
+          </div>
+          <div class="product-title">
+            <h2 id="productName"></h2>
+            <div class="product-brand" id="productBrand"></div>
+            <div class="product-seller" id="productSeller"></div>
+          </div>
+        </div>
+        
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-title">Цена</div>
+            <div class="stat-value" id="productPrice"></div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-title">Скидка</div>
+            <div class="stat-value" id="productDiscount"></div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-title">Рейтинг</div>
+            <div class="stat-value" id="productRating"></div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-title">Отзывы</div>
+            <div class="stat-value" id="productFeedbacks"></div>
+          </div>
+        </div>
+        
+        <div class="section collapsible">
+          <div class="section-header">
+            <h3>Остатки по складам</h3>
+            <button class="toggle-button">Свернуть</button>
+          </div>
+          <div class="section-content" id="warehouseDistribution"></div>
+        </div>
+        
+        <div class="section collapsible">
+          <div class="section-header">
+            <h3>Логистика</h3>
+            <button class="toggle-button">Свернуть</button>
+          </div>
+          <div class="section-content" id="logisticsInfo"></div>
+        </div>
+        
+        <div class="button-container">
+          <button id="saveBtn">Сохранить в историю</button>
+          <button id="addToFavoritesBtn" class="icon-button"><span class="paperclip-icon">📎</span></button>
+          <button id="exportBtn">Экспорт данных</button>
+        </div>
+      </div>
+      
+      <div id="errorMessage" class="hidden">
+        <p>Не удалось получить данные о товаре. Проверьте артикул и попробуйте снова.</p>
+      </div>
+    </div>
+    
+    <!-- Вкладка информации о складах -->
+    <div id="warehouse-tab" class="tab-content">
+      <div class="warehouse-tools">
+        <input type="text" id="warehouseSearch" placeholder="Поиск склада...">
+        <select id="warehouseSort">
+          <option value="name">По названию</option>
+          <option value="delivery">По времени доставки</option>
+          <option value="rating">По рейтингу</option>
+        </select>
+      </div>
+      
+      <div class="warehouse-filters">
+        <label><input type="checkbox" id="filterFBW" checked> FBW</label>
+        <label><input type="checkbox" id="filterFBS" checked> FBS</label>
+      </div>
+      
+      <div id="warehouseList" class="warehouse-catalog"></div>
+    </div>
+    
+    <!-- Вкладка избранного -->
+    <div id="favorites-tab" class="tab-content">
+      <div class="favorites-header">
+        <h3>Избранные товары</h3>
+        <div class="favorites-tools">
+          <input type="text" id="favoritesSearch" placeholder="Поиск в избранном...">
+        </div>
+      </div>
+      
+      <div id="favoritesList" class="favorites-catalog">
+        <!-- Здесь будет список избранных товаров -->
+      </div>
+      
+      <div id="noFavorites" class="no-data">
+        <p>У вас нет избранных товаров</p>
+        <p class="no-data-hint">Добавьте товары в избранное, нажав на иконку скрепки при просмотре товара</p>
+      </div>
+    </div>
+  </div>
+  
+  <script src="warehouses.js"></script>
+  <script src="popup.js"></script>
+</body>
+</html> 

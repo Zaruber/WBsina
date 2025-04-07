@@ -1,0 +1,1120 @@
+:root {
+  --primary-color: #333333; /* Основной цвет - темно-серый */
+  --primary-hover: #555555;
+  --secondary-color: #f8f8f8;
+  --text-color: #333;
+  --light-text: #777;
+  --border-color: #e8e8e8;
+  --success-color: #43a047; /* A - зеленый */
+  --warning-color: #ffb300; /* B - желтый */
+  --danger-color: #e53935;
+  --fbw-color: #43a047;
+  --fbs-color: #ffb300;
+  --shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+  --card-radius: 4px;
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space-md: 12px;
+  --space-lg: 20px;
+  
+  /* Цвета категорий, как на референсе */
+  --category-a: #43a047; /* Зеленый */
+  --category-b: #ffb300; /* Желтый */
+  --category-c: #f57c00; /* Оранжевый */
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', Arial, sans-serif;
+}
+
+body {
+  background-color: white;
+  color: var(--text-color);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.container {
+  width: 400px; /* Уменьшаем ширину для соответствия мобильному виду */
+  max-width: 100%;
+  margin: 0 auto;
+  padding: var(--space-md);
+  background: white;
+  box-shadow: none;
+  border-radius: 0;
+}
+
+header {
+  margin-bottom: var(--space-md);
+  border-bottom: 1px solid var(--border-color);
+  padding-bottom: var(--space-md);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+h1 {
+  font-size: 18px;
+  font-weight: 500;
+  color: var(--text-color);
+}
+
+h2 {
+  font-size: 16px;
+  font-weight: 500;
+  margin-bottom: var(--space-sm);
+}
+
+h3 {
+  font-size: 14px;
+  font-weight: 500;
+  margin-bottom: var(--space-sm);
+}
+
+h4 {
+  font-size: 13px;
+  font-weight: 500;
+  margin-bottom: var(--space-xs);
+  color: var(--text-color);
+}
+
+.search-container {
+  display: flex;
+  margin-bottom: var(--space-md);
+}
+
+input[type="text"] {
+  flex: 1;
+  padding: 8px var(--space-md);
+  border: 1px solid var(--border-color);
+  border-radius: var(--card-radius) 0 0 var(--card-radius);
+  outline: none;
+  font-size: 13px;
+}
+
+input[type="text"]:focus {
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 1px var(--primary-color);
+}
+
+button {
+  padding: 8px var(--space-md);
+  background-color: var(--primary-color);
+  color: white;
+  border: none;
+  border-radius: 0 var(--card-radius) var(--card-radius) 0;
+  cursor: pointer;
+  font-weight: 400;
+}
+
+button:hover {
+  background-color: var(--primary-hover);
+}
+
+.hidden {
+  display: none;
+}
+
+#loadingIndicator {
+  text-align: center;
+  padding: var(--space-lg) 0;
+}
+
+.spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid var(--secondary-color);
+  border-top: 3px solid var(--primary-color);
+  border-radius: 50%;
+  margin: 0 auto 16px;
+}
+
+.product-header {
+  display: flex;
+  margin-bottom: var(--space-md);
+}
+
+.product-image {
+  width: 80px;
+  height: 80px;
+  margin-right: var(--space-md);
+  overflow: hidden;
+  border-radius: var(--card-radius);
+  background-color: var(--secondary-color);
+  box-shadow: var(--shadow);
+}
+
+.product-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.product-title {
+  flex: 1;
+}
+
+.product-brand {
+  color: var(--primary-color);
+  margin-top: var(--space-xs);
+  font-weight: 500;
+}
+
+.product-seller {
+  color: var(--light-text);
+  margin-top: var(--space-xs);
+  font-size: 12px;
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--space-sm);
+  margin-bottom: var(--space-md);
+}
+
+.stat-card {
+  background-color: var(--secondary-color);
+  padding: var(--space-md);
+  border-radius: var(--card-radius);
+  box-shadow: none;
+}
+
+.stat-card:hover {
+  background-color: #f0f0f0;
+}
+
+.stat-title {
+  font-size: 12px;
+  color: var(--light-text);
+  margin-bottom: 4px;
+}
+
+.stat-value {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--primary-color);
+}
+
+.section {
+  margin-bottom: var(--space-md);
+  padding: var(--space-md);
+  border: 1px solid var(--border-color);
+  border-radius: var(--card-radius);
+  position: relative;
+  box-shadow: none;
+}
+
+#warehouseDistribution {
+  max-height: 500px;
+  overflow-y: auto;
+  position: relative;
+  scrollbar-width: thin;
+  scrollbar-color: var(--light-text) var(--secondary-color);
+}
+
+#warehouseDistribution::-webkit-scrollbar {
+  width: 4px;
+}
+
+#warehouseDistribution::-webkit-scrollbar-track {
+  background: var(--secondary-color);
+}
+
+#warehouseDistribution::-webkit-scrollbar-thumb {
+  background-color: var(--light-text);
+  border-radius: 4px;
+}
+
+/* При сворачивании секции warehouseDistribution сбрасываем его размеры */
+.section.collapsed #warehouseDistribution {
+  max-height: 0;
+  overflow: hidden;
+}
+
+.no-data {
+  color: var(--light-text);
+  font-style: italic;
+  text-align: center;
+  padding: var(--space-md) 0;
+}
+
+/* Стили для информации о количестве */
+.total-info {
+  background-color: var(--secondary-color);
+  padding: var(--space-md);
+  border-radius: var(--card-radius);
+  margin-bottom: var(--space-md);
+  box-shadow: none;
+}
+
+.total-quantity {
+  font-size: 16px;
+  margin-bottom: var(--space-xs);
+  font-weight: 500;
+}
+
+.distribution-info {
+  display: flex;
+  gap: var(--space-md);
+}
+
+.fbw-info {
+  color: var(--fbw-color);
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.fbs-info {
+  color: var(--fbs-color);
+  font-size: 14px;
+  font-weight: 500;
+}
+
+/* Разделитель */
+hr {
+  border: none;
+  border-top: 1px solid var(--border-color);
+  margin: var(--space-md) 0;
+}
+
+/* График распределения размеров */
+.chart-container {
+  margin: var(--space-md) 0;
+  background-color: white;
+  border-radius: var(--card-radius);
+  padding: var(--space-md);
+  border: 1px solid var(--border-color);
+  box-shadow: none;
+}
+
+.chart-container h4 {
+  margin-bottom: var(--space-md);
+  color: var(--text-color);
+  font-weight: 600;
+}
+
+.sizes-chart, .warehouses-chart {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.chart-bar {
+  display: flex;
+  align-items: center;
+  font-size: 13px;
+  gap: var(--space-sm);
+}
+
+.chart-label {
+  width: 60px;
+  text-align: right;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  cursor: default;
+  font-weight: 500;
+}
+
+.chart-bar-container {
+  flex: 1;
+  height: 16px;
+  background-color: var(--secondary-color);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.chart-bar-fill {
+  height: 100%;
+  background-color: var(--primary-color);
+  border-radius: 8px;
+}
+
+/* Специальные стили для графика складов */
+.warehouses-chart .chart-bar-fill.fast-delivery {
+  background-color: var(--success-color);
+}
+
+.warehouses-chart .chart-bar-fill.other-warehouses {
+  background-color: var(--light-text);
+}
+
+.chart-value {
+  width: 90px;
+  text-align: left;
+  font-weight: 500;
+}
+
+/* Секция заголовка */
+.section-title {
+  color: var(--primary-color);
+  margin: var(--space-md) 0 var(--space-sm);
+  font-weight: 600;
+  font-size: 15px;
+}
+
+/* Раскладка по складам в стиле WB */
+.warehouse-list {
+  background-color: white;
+  border-radius: var(--card-radius);
+  border: 1px solid var(--border-color);
+  margin-bottom: var(--space-md);
+  box-shadow: none;
+  overflow: hidden;
+}
+
+.warehouse-section {
+  border-bottom: 1px solid var(--border-color);
+}
+
+.warehouse-section:last-child {
+  border-bottom: none;
+}
+
+.warehouse-header {
+  display: flex;
+  padding: var(--space-md);
+  align-items: center;
+  background-color: white;
+  cursor: pointer;
+}
+
+.warehouse-header:hover {
+  background-color: var(--secondary-color);
+}
+
+.warehouse-toggle {
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 8px;
+  font-size: 16px;
+  color: var(--primary-color);
+  cursor: pointer;
+  user-select: none;
+  font-weight: bold;
+}
+
+.warehouse-info {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.warehouse-name {
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--text-color);
+}
+
+.delivery-time {
+  margin-left: var(--space-sm);
+  color: var(--light-text);
+  font-size: 13px;
+}
+
+.warehouse-quantity {
+  font-weight: 600;
+  margin-left: var(--space-sm);
+  color: var(--primary-color);
+}
+
+.size-list {
+  padding: 0 var(--space-md) var(--space-md) 44px;
+  background-color: var(--secondary-color);
+}
+
+.size-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border-color);
+  font-size: 13px;
+}
+
+.size-item:last-child {
+  border-bottom: none;
+}
+
+.size-name {
+  color: var(--text-color);
+}
+
+.size-quantity {
+  font-weight: 600;
+  color: var(--primary-color);
+}
+
+/* История цен */
+.price-history-section {
+  margin: var(--space-md) 0;
+  padding: var(--space-md);
+  border: 1px solid var(--border-color);
+  border-radius: var(--card-radius);
+  box-shadow: none;
+}
+
+.price-history-section h4 {
+  margin-bottom: var(--space-md);
+  color: var(--text-color);
+  font-weight: 600;
+}
+
+.price-history-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.price-history-table th, 
+.price-history-table td {
+  padding: 10px;
+  text-align: left;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.price-history-table th {
+  font-weight: 600;
+  color: var(--light-text);
+  background-color: var(--secondary-color);
+}
+
+.price-history-table tr:hover {
+  background-color: var(--secondary-color);
+}
+
+.price-up {
+  color: var(--danger-color);
+  font-weight: 600;
+}
+
+.price-down {
+  color: var(--success-color);
+  font-weight: 600;
+}
+
+.price-same {
+  color: var(--light-text);
+}
+
+/* Информация о логистике */
+.logistics-item {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 10px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.logistics-item:last-child {
+  border-bottom: none;
+  margin-bottom: 0;
+}
+
+.logistics-item span:first-child {
+  color: var(--light-text);
+}
+
+.logistics-item span:last-child {
+  font-weight: 600;
+  color: var(--text-color);
+}
+
+.button-container {
+  display: flex;
+  gap: var(--space-sm);
+  margin-top: var(--space-md);
+}
+
+.button-container button {
+  flex: 1;
+  border-radius: var(--card-radius);
+  padding: 8px;
+  font-weight: 400;
+}
+
+#exportBtn {
+  background-color: white;
+  color: var(--text-color);
+  border: 1px solid var(--border-color);
+}
+
+#exportBtn:hover {
+  background-color: var(--secondary-color);
+  border-color: var(--light-text);
+}
+
+#errorMessage {
+  padding: var(--space-md);
+  background-color: #ffebee;
+  color: var(--danger-color);
+  border-radius: var(--card-radius);
+  text-align: center;
+  box-shadow: var(--shadow);
+  font-weight: 500;
+}
+
+/* Стили для сворачиваемых секций */
+.section.collapsible {
+  transition: none;
+}
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+}
+
+.section-header:hover {
+  color: var(--primary-color);
+}
+
+.section-header h3 {
+  margin: 0;
+}
+
+.toggle-button {
+  background: none;
+  border: 1px solid var(--border-color);
+  border-radius: var(--card-radius);
+  padding: 4px 10px;
+  font-size: 12px;
+  color: var(--text-color);
+  cursor: pointer;
+}
+
+.toggle-button:hover {
+  background-color: var(--secondary-color);
+  color: var(--primary-color);
+  border-color: var(--primary-color);
+}
+
+.section-content {
+  transition: none;
+  overflow: hidden;
+  width: 100%;
+}
+
+.section.collapsed {
+  margin-bottom: var(--space-sm);
+}
+
+.section.collapsed .section-content {
+  display: none;
+}
+
+.section.collapsed .toggle-button {
+  color: var(--primary-color);
+}
+
+/* Предотвращаем "прыжки" контента при сворачивании */
+.section.collapsible.collapsed {
+  min-height: 46px;
+}
+
+/* Навигационное меню */
+.main-menu {
+  margin-top: var(--space-xs);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.main-menu ul {
+  display: flex;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.main-menu li {
+  padding: 10px 14px;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  font-weight: 400;
+  color: var(--light-text);
+  font-size: 13px;
+}
+
+.main-menu li:hover {
+  color: var(--primary-color);
+}
+
+.main-menu li.active {
+  font-weight: 500;
+  border-bottom: 2px solid var(--primary-color);
+  color: var(--primary-color);
+}
+
+/* Стили вкладок */
+.tab-content {
+  display: none;
+  padding: var(--space-md) 0;
+}
+
+.tab-content.active {
+  display: block;
+}
+
+/* Стили для отображения списка складов */
+.warehouse-tools {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: var(--space-md);
+}
+
+.warehouse-tools input {
+  flex: 1;
+  padding: 10px var(--space-md);
+  border: 1px solid var(--border-color);
+  border-radius: var(--card-radius);
+  margin-right: var(--space-sm);
+  font-size: 14px;
+}
+
+.warehouse-tools input:focus {
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 1px var(--primary-color);
+  outline: none;
+}
+
+.warehouse-tools select {
+  width: 140px;
+  padding: 10px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--card-radius);
+  background-color: white;
+  outline: none;
+  font-size: 14px;
+  appearance: none;
+  background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23333%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  background-size: 12px;
+  padding-right: 28px;
+}
+
+.warehouse-tools select:focus {
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 1px var(--primary-color);
+}
+
+.warehouse-filters {
+  display: flex;
+  gap: var(--space-md);
+  margin-bottom: var(--space-md);
+  background-color: var(--secondary-color);
+  padding: 10px var(--space-md);
+  border-radius: var(--card-radius);
+}
+
+.warehouse-filters label {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.warehouse-filters label:hover {
+  color: var(--primary-color);
+}
+
+.warehouse-filters input[type="checkbox"] {
+  margin-right: 8px;
+  width: 16px;
+  height: 16px;
+  accent-color: var(--primary-color);
+}
+
+.warehouse-catalog {
+  display: grid;
+  grid-template-columns: repeat(1, 1fr); /* Изменили на один столбец, как в референсе */
+  gap: var(--space-md);
+  max-height: 600px;
+  overflow-y: auto;
+  padding-right: 4px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--light-text) var(--secondary-color);
+}
+
+.warehouse-catalog::-webkit-scrollbar {
+  width: 4px;
+}
+
+.warehouse-catalog::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.warehouse-catalog::-webkit-scrollbar-thumb {
+  background-color: var(--light-text);
+  border-radius: 4px;
+}
+
+.warehouse-card {
+  border: 1px solid var(--border-color);
+  border-radius: var(--card-radius);
+  padding: var(--space-md);
+  background-color: white;
+  box-shadow: none;
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  position: relative;
+}
+
+.warehouse-card:hover {
+  background-color: var(--secondary-color);
+}
+
+.warehouse-card::before {
+  content: attr(data-quality);
+  position: absolute;
+  top: var(--space-md);
+  right: var(--space-md);
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background-color: var(--primary-color);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 12px;
+}
+
+.warehouse-card[data-quality="A"]::before {
+  background-color: var(--category-a);
+}
+
+.warehouse-card[data-quality="B"]::before {
+  background-color: var(--category-b);
+}
+
+.warehouse-card[data-quality="C"]::before {
+  background-color: var(--category-c);
+}
+
+.warehouse-card h4 {
+  margin: 0 0 var(--space-xs) 0;
+  font-size: 15px;
+  color: var(--text-color);
+}
+
+.warehouse-card .warehouse-id {
+  font-size: 12px;
+  color: var(--light-text);
+  margin-bottom: var(--space-xs);
+}
+
+.warehouse-info {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 14px;
+  flex: 1;
+}
+
+.warehouse-info-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 4px;
+}
+
+.warehouse-info-item:last-child {
+  border-bottom: none;
+}
+
+.warehouse-info-item span:first-child {
+  color: var(--light-text);
+  font-size: 12px;
+}
+
+.warehouse-info-item span:last-child {
+  font-weight: 600;
+  font-size: 13px;
+}
+
+.warehouse-type {
+  display: flex;
+  gap: var(--space-xs);
+  margin-top: var(--space-xs);
+}
+
+.warehouse-type-tag {
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.tag-fbw {
+  background-color: #e6f7ff;
+  color: #1890ff;
+}
+
+.tag-fbs {
+  background-color: #f6ffed;
+  color: #52c41a;
+}
+
+.fast-delivery {
+  color: var(--category-a);
+  font-weight: 600;
+}
+
+.medium-delivery {
+  color: var(--category-b);
+  font-weight: 600;
+}
+
+.slow-delivery {
+  color: var(--category-c);
+  font-weight: 600;
+}
+
+.no-results {
+  grid-column: 1 / span 1;
+  text-align: center;
+  padding: var(--space-lg);
+  background-color: var(--secondary-color);
+  border-radius: var(--card-radius);
+  color: var(--light-text);
+  font-style: italic;
+}
+
+/* Добавляем новый стиль для схожести с референсом */
+.material-quality {
+  display: inline-block;
+  font-size: 12px;
+  color: var(--light-text);
+  margin-top: var(--space-xs);
+}
+
+.price-tag {
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: var(--space-xs);
+}
+
+/* Иконка избранного в стиле референса */
+.favorite-icon {
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #e53935;
+  cursor: pointer;
+}
+
+/* Кнопка "Смотреть на" в стиле референса */
+.view-on-btn {
+  display: inline-block;
+  padding: 6px 10px;
+  font-size: 12px;
+  color: var(--text-color);
+  background-color: transparent;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  cursor: pointer;
+  margin-top: var(--space-xs);
+  text-decoration: none;
+}
+
+.view-on-btn:hover {
+  background-color: var(--secondary-color);
+}
+
+/* Сортировка */
+.sort-by {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  margin-bottom: var(--space-md);
+  font-size: 13px;
+}
+
+.sort-by select {
+  margin-left: 8px;
+  padding: 4px 8px;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  font-size: 13px;
+  outline: none;
+}
+
+/* Стили для иконки скрепки (Добавить в избранное) */
+.icon-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px;
+  flex: 0 0 auto;
+  margin: 0 var(--space-xs);
+  border-radius: var(--card-radius);
+  background-color: white;
+  border: 1px solid var(--border-color);
+}
+
+.icon-button:hover {
+  background-color: var(--secondary-color);
+}
+
+.paperclip-icon {
+  font-size: 18px;
+}
+
+.icon-button.active {
+  background-color: var(--secondary-color);
+  color: var(--primary-color);
+  border-color: var(--primary-color);
+}
+
+/* Стили для раздела избранное */
+.favorites-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--space-md);
+}
+
+.favorites-tools {
+  display: flex;
+  align-items: center;
+}
+
+.favorites-tools input {
+  padding: 8px var(--space-md);
+  border: 1px solid var(--border-color);
+  border-radius: var(--card-radius);
+  font-size: 14px;
+  width: 200px;
+}
+
+.favorites-catalog {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  max-height: 600px;
+  overflow-y: auto;
+  padding-right: 4px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--light-text) var(--secondary-color);
+}
+
+.favorites-catalog::-webkit-scrollbar {
+  width: 4px;
+}
+
+.favorites-catalog::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.favorites-catalog::-webkit-scrollbar-thumb {
+  background-color: var(--light-text);
+  border-radius: 4px;
+}
+
+.favorite-item {
+  display: flex;
+  align-items: center;
+  padding: var(--space-md);
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  background-color: white;
+  box-shadow: none;
+  cursor: pointer;
+  position: relative;
+}
+
+.favorite-item:hover {
+  background-color: var(--secondary-color);
+}
+
+.favorite-image {
+  width: 50px;
+  height: 50px;
+  border-radius: 4px;
+  overflow: hidden;
+  margin-right: var(--space-md);
+  background-color: var(--secondary-color);
+}
+
+.favorite-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.favorite-info {
+  flex: 1;
+}
+
+.favorite-name {
+  font-weight: 500;
+  font-size: 14px;
+  margin-bottom: 2px;
+  color: var(--text-color);
+}
+
+.favorite-brand {
+  font-size: 12px;
+  color: var(--light-text);
+  margin-bottom: 2px;
+}
+
+.favorite-price {
+  font-weight: 600;
+  color: var(--primary-color);
+  font-size: 13px;
+}
+
+.favorite-remove {
+  position: absolute;
+  top: var(--space-sm);
+  right: var(--space-sm);
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background-color: transparent;
+  border: none;
+  color: var(--light-text);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  cursor: pointer;
+  z-index: 2;
+}
+
+.favorite-remove:hover {
+  color: var(--danger-color);
+}
+
+.no-data-hint {
+  font-size: 12px;
+  margin-top: var(--space-sm);
+  font-style: normal;
+  color: var(--light-text);
+}
+
+/* Адаптация button-container для включения иконки скрепки */
+.button-container {
+  display: flex;
+  gap: var(--space-sm);
+  margin-top: var(--space-md);
+}
+
+/* При наличии иконки уменьшаем размер основных кнопок */
+.button-container button:not(.icon-button) {
+  flex: 1;
+} 

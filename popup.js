@@ -14,6 +14,11 @@ document.addEventListener('DOMContentLoaded', () => {
   const productName = document.getElementById('productName');
   const productBrand = document.getElementById('productBrand');
   const productSeller = document.getElementById('productSeller');
+  const productCategory = document.getElementById('productCategory');
+  const productColors = document.getElementById('productColors');
+  const productPics = document.getElementById('productPics');
+  const productSizesChips = document.getElementById('productSizes');
+  const productLink = document.getElementById('productLink');
   const productPrice = document.getElementById('productPrice');
   const productDiscount = document.getElementById('productDiscount');
   const productRating = document.getElementById('productRating');
@@ -26,17 +31,118 @@ document.addEventListener('DOMContentLoaded', () => {
   const menuItems = document.querySelectorAll('.main-menu li');
   const tabContents = document.querySelectorAll('.tab-content');
   
-  // Элементы для работы со списком складов
-  const warehouseSearch = document.getElementById('warehouseSearch');
-  const warehouseSort = document.getElementById('warehouseSort');
-  const filterFBW = document.getElementById('filterFBW');
-  const filterFBS = document.getElementById('filterFBS');
-  const warehouseList = document.getElementById('warehouseList');
+  // Вкладка складов удалена
+  const warehouseSearch = null;
+  const warehouseSort = null;
+  const filterFBW = { checked: true };
+  const filterFBS = { checked: true };
+  const warehouseList = null;
   
   // Элементы для работы с избранным
   const favoritesList = document.getElementById('favoritesList');
   const favoritesSearch = document.getElementById('favoritesSearch');
   const noFavorites = document.getElementById('noFavorites');
+
+  // Динамические данные о складах из acceptanceCoefficientsReport.json
+  let ACCEPTANCE_DATA = {};
+  loadAcceptanceData();
+
+  function loadAcceptanceData() {
+    try {
+      const url = chrome.runtime.getURL('acceptanceCoefficientsReport.json');
+      fetch(url)
+        .then(r => r.json())
+        .then(json => {
+          const report = (json && json.result && Array.isArray(json.result.report)) ? json.result.report : [];
+          const map = {};
+          for (const item of report) {
+            const id = String(item.warehouseID);
+            if (!map[id]) {
+              map[id] = {
+                id,
+                name: item.warehouseName || `Склад ${id}`,
+                isSortingCenter: Boolean(item.isSortingCenter),
+                allowUnload: Boolean(item.allowUnload),
+                types: {}
+              };
+            }
+            // Обновляем имя и флаги, если в других записях более актуально
+            if (item.warehouseName) map[id].name = item.warehouseName;
+            if (item.isSortingCenter) map[id].isSortingCenter = true;
+            if (item.allowUnload) map[id].allowUnload = true;
+
+            const t = String(item.acceptanceType ?? '');
+            if (t) {
+              map[id].types[t] = {
+                coefficient: item.coefficient,
+                deliveryCoefficient: item.deliveryCoefficient,
+                storageCoefficient: item.storageCoefficient,
+                deliveryBaseLiter: item.deliveryBaseLiter,
+                deliveryAdditionalLiter: item.deliveryAdditionalLiter,
+                storageBaseLiter: item.storageBaseLiter,
+                storageAdditionalLiter: item.storageAdditionalLiter
+              };
+            }
+          }
+          ACCEPTANCE_DATA = map;
+          // Вкладка складов удалена
+        })
+        .catch(() => {});
+    } catch (_) {}
+  }
+
+  function getWarehouseNameById(warehouseId) {
+    const id = String(warehouseId);
+    if (ACCEPTANCE_DATA[id] && ACCEPTANCE_DATA[id].name) return ACCEPTANCE_DATA[id].name;
+    if (typeof WAREHOUSES !== 'undefined' && WAREHOUSES[id]) return WAREHOUSES[id];
+    return `Склад ${id}`;
+  }
+
+  function getMergedWarehouseDetailsById(warehouseId) {
+    const id = String(warehouseId);
+    const ad = ACCEPTANCE_DATA[id] || {};
+    const sd = (typeof WAREHOUSE_DETAILS !== 'undefined' && WAREHOUSE_DETAILS[id]) ? WAREHOUSE_DETAILS[id] : {};
+    return {
+      id,
+      name: ad.name || sd.name || getWarehouseNameById(id),
+      address: sd.address || '',
+      coords: sd.coords || [],
+      city: sd.city || '',
+      rating: sd.rating || 0,
+      delivery_time: sd.delivery_time || '',
+      is_fbw: sd.is_fbw || Boolean(ad.types && (ad.types['4'] || ad.types[4])),
+      is_fbs: sd.is_fbs || Boolean(ad.types && (ad.types['6'] || ad.types[6])),
+      acceptance: ad
+    };
+  }
+
+  function inferDeliveryFromAcceptance(warehouseId) {
+    const id = String(warehouseId);
+    const ad = ACCEPTANCE_DATA[id];
+    if (!ad || !ad.types) return undefined;
+    const t4 = ad.types['4'] || ad.types[4];
+    const t6 = ad.types['6'] || ad.types[6];
+    const cand = [t4, t6]
+      .map(t => t && parseInt(t.deliveryCoefficient))
+      .filter(v => Number.isFinite(v));
+    if (cand.length === 0) return undefined;
+    return Math.min(...cand);
+  }
+
+  // Определение метода доставки для записи stock v4
+  function getStockDeliveryType(stock) {
+    const merged = getMergedWarehouseDetailsById(stock.wh);
+    const hasFBW = Boolean(merged && merged.is_fbw);
+    const hasFBS = Boolean(merged && merged.is_fbs);
+    // Если известен только один тип — возвращаем его
+    if (hasFBW && !hasFBS) return 'FBW';
+    if (hasFBS && !hasFBW) return 'FBS';
+    // Если оба допустимы или неизвестно — используем эвристику по времени сборки
+    const t1 = Number(stock.time1) || 0;
+    // FBS чаще имеет высокое время сборки (24+), FBW — низкое (<= 6)
+    if (t1 === 0) return hasFBW ? 'FBW' : 'FBS';
+    return t1 <= 6 ? 'FBW' : 'FBS';
+  }
 
   // Инициализация обработчиков для сворачиваемых блоков
   initCollapsibleSections();
@@ -68,10 +174,7 @@ document.addEventListener('DOMContentLoaded', () => {
       // Показываем нужную вкладку
       document.getElementById(tabId).classList.add('active');
       
-      // Если выбрана вкладка складов, загружаем информацию о складах
-      if (tabId === 'warehouse-tab') {
-        displayWarehouseData();
-      }
+      // Вкладка складов удалена
       
       // Если выбрана вкладка избранного, загружаем избранные товары
       if (tabId === 'favorites-tab') {
@@ -98,24 +201,11 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  // Обработчик для поиска складов
-  warehouseSearch.addEventListener('input', () => {
-    displayWarehouseData();
-  });
+  // Вкладка складов удалена
 
-  // Обработчик для сортировки складов
-  warehouseSort.addEventListener('change', () => {
-    displayWarehouseData();
-  });
+  // Вкладка складов удалена
 
-  // Обработчики для фильтров типов складов
-  filterFBW.addEventListener('change', () => {
-    displayWarehouseData();
-  });
-
-  filterFBS.addEventListener('change', () => {
-    displayWarehouseData();
-  });
+  // Вкладка складов удалена
   
   // Обработчик поиска в избранном
   favoritesSearch.addEventListener('input', () => {
@@ -140,7 +230,7 @@ document.addEventListener('DOMContentLoaded', () => {
         id: currentProductData.id,
         name: currentProductData.name,
         brand: currentProductData.brand,
-        salePriceU: currentProductData.salePriceU,
+        salePriceU: getProductPriceInfo(currentProductData).salePriceU,
         imageUrl: productImage.src,
         addedToFavorites: new Date().toISOString()
       };
@@ -248,7 +338,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // Добавляем новую запись в историю цен
         savedProducts[existingIndex].priceHistory.push({
           date: currentDate,
-          price: currentPrice,
+          price: getProductPriceInfo(currentProductData).salePriceU / 100,
           savedData: {
             // Добавляем ключевые данные для отслеживания истории
             feedbacks: currentProductData.feedbacks,
@@ -279,7 +369,7 @@ document.addEventListener('DOMContentLoaded', () => {
           ...currentProductData,
           priceHistory: [{
             date: currentDate,
-            price: currentPrice,
+            price: getProductPriceInfo(currentProductData).salePriceU / 100,
             savedData: {
               // Добавляем ключевые данные для отслеживания истории
               feedbacks: currentProductData.feedbacks,
@@ -340,7 +430,8 @@ document.addEventListener('DOMContentLoaded', () => {
   function fetchProductData(articleId) {
     showLoading();
     
-    const apiUrl = `https://card.wb.ru/cards/detail?appType=0&curr=rub&dest=-1257786&spp=30&nm=${articleId}`;
+    // Эндпоинт v4 (устойчивее к антиботу WB). Поддерживает несколько артикулов через ';'
+    const apiUrl = buildV4DetailUrl([articleId]);
     
     fetch(apiUrl)
       .then(response => {
@@ -350,11 +441,13 @@ document.addEventListener('DOMContentLoaded', () => {
         return response.json();
       })
       .then(data => {
-        if (!data.data || !data.data.products || data.data.products.length === 0) {
+        // Совместимость со старыми/новыми объектами ответа
+        const products = (data && data.data && data.data.products) ? data.data.products : data.products;
+        if (!products || products.length === 0) {
           throw new Error('Товар не найден');
         }
         
-        const product = data.data.products[0];
+        const product = products[0];
         currentProductData = product;
         
         // Проверяем, есть ли этот товар в избранном
@@ -386,6 +479,56 @@ document.addEventListener('DOMContentLoaded', () => {
       });
   }
 
+  // Построитель URL для v4 detail
+  function buildV4DetailUrl(articleIds) {
+    const nmParam = encodeURIComponent(articleIds.join(';'));
+    const params = new URLSearchParams({
+      appType: '32',
+      curr: 'rub',
+      dest: '-2162195',
+      hide_dtype: '13',
+      spp: '30',
+      ab_testing: 'false',
+      lang: 'ru',
+      nm: nmParam
+    });
+    return `https://card.wb.ru/cards/v4/detail?${params.toString()}`;
+  }
+
+  // Универсальная нормализация цен из объекта товара WB (v3/v4)
+  function getProductPriceInfo(product) {
+    // В старом ответе были поля priceU, salePriceU, sale
+    if (typeof product.priceU === 'number' && typeof product.salePriceU === 'number') {
+      const priceU = product.priceU;
+      const salePriceU = product.salePriceU;
+      const discountPercent = product.sale ?? Math.round((1 - salePriceU / Math.max(priceU, 1)) * 100);
+      return { priceU, salePriceU, discountPercent };
+    }
+    
+    // В v4 внутри размера есть price { basic, product } и может быть общий уровень
+    // Попытаемся найти минимальный price по любому размеру (релевантная цена карточки)
+    if (Array.isArray(product.sizes) && product.sizes.length > 0) {
+      let basicMin = Infinity;
+      let productMin = Infinity;
+      for (const size of product.sizes) {
+        if (size && size.price && typeof size.price.basic === 'number' && typeof size.price.product === 'number') {
+          basicMin = Math.min(basicMin, size.price.basic);
+          productMin = Math.min(productMin, size.price.product);
+        }
+      }
+      if (isFinite(basicMin) && isFinite(productMin)) {
+        const priceU = basicMin;        // уже в копейках
+        const salePriceU = productMin;  // уже в копейках
+        const discountPercent = Math.max(0, Math.round((1 - salePriceU / Math.max(priceU, 1)) * 100));
+        return { priceU, salePriceU, discountPercent };
+      }
+    }
+    
+    // Фолбэк: если ничего не нашли, считаем без скидки
+    const fallback = (product.salePriceU ?? product.priceU ?? 0);
+    return { priceU: fallback, salePriceU: fallback, discountPercent: 0 };
+  }
+
   // Функция отображения данных о товаре
   function displayProductData(product) {
     // Базовая информация
@@ -393,6 +536,60 @@ document.addEventListener('DOMContentLoaded', () => {
     productBrand.textContent = product.brand;
     productSeller.textContent = `Продавец: ${product.supplier} (рейтинг: ${product.supplierRating})`;
     
+    // Универсальная информация о ценах (совместимо с v4)
+    const priceInfo = getProductPriceInfo(product);
+
+    // Категория товара
+    productCategory.textContent = product.entity || '';
+
+    // Фото
+    productPics.textContent = Number.isFinite(product.pics) ? product.pics : '';
+
+    // Цвета
+    productColors.innerHTML = '';
+    if (Array.isArray(product.colors) && product.colors.length > 0) {
+      product.colors.slice(0, 10).forEach(color => {
+        const chip = document.createElement('span');
+        chip.className = 'chip color-chip';
+        const dot = document.createElement('span');
+        dot.className = 'chip-dot';
+        // Попытка приблизить цвет из имени (простая эвристика)
+        const low = (color.name || '').toLowerCase();
+        if (low.includes('черн')) dot.style.backgroundColor = '#000';
+        else if (low.includes('бел')) dot.style.backgroundColor = '#fff';
+        else if (low.includes('крас')) dot.style.backgroundColor = '#e53935';
+        else if (low.includes('син')) dot.style.backgroundColor = '#1e88e5';
+        else if (low.includes('голуб')) dot.style.backgroundColor = '#64b5f6';
+        else if (low.includes('зелен')) dot.style.backgroundColor = '#43a047';
+        else if (low.includes('желт')) dot.style.backgroundColor = '#fdd835';
+        else if (low.includes('оранж')) dot.style.backgroundColor = '#fb8c00';
+        else if (low.includes('фиолет')) dot.style.backgroundColor = '#8e24aa';
+        else if (low.includes('роз')) dot.style.backgroundColor = '#ec407a';
+        else dot.style.backgroundColor = '#ccc';
+        chip.appendChild(dot);
+        const label = document.createElement('span');
+        label.textContent = color.name;
+        chip.appendChild(label);
+        productColors.appendChild(chip);
+      });
+    }
+
+    // Размеры (чипы)
+    productSizesChips.innerHTML = '';
+    if (Array.isArray(product.sizes) && product.sizes.length > 0) {
+      const uniq = new Set();
+      product.sizes.forEach(s => {
+        const display = s.name || s.origName || 'Без размера';
+        if (display && !uniq.has(display)) {
+          uniq.add(display);
+          const chip = document.createElement('span');
+          chip.className = 'chip';
+          chip.textContent = display;
+          productSizesChips.appendChild(chip);
+        }
+      });
+    }
+
     // Изображение товара
     const vol = Math.floor(product.id / 100000);
     const part = Math.floor(product.id / 1000);
@@ -423,13 +620,18 @@ document.addEventListener('DOMContentLoaded', () => {
     else basket = "22";
     
     productImage.src = `https://basket-${basket}.wbbasket.ru/vol${vol}/part${part}/${product.id}/images/big/1.webp`;
+
+    // Ссылка на карточку на WB
+    if (productLink) {
+      productLink.href = `https://wildberries.ru/catalog/${product.id}/detail.aspx`;
+    }
     
-    // Цена и скидка
-    const originalPrice = (product.priceU / 100).toFixed(0);
-    const salePrice = (product.salePriceU / 100).toFixed(0);
+    // Цена и скидка (на основе priceInfo)
+    const originalPrice = (priceInfo.priceU / 100).toFixed(0);
+    const salePrice = (priceInfo.salePriceU / 100).toFixed(0);
     
     productPrice.innerHTML = `${salePrice} ₽ <span style="text-decoration: line-through; color: #777; font-size: 14px;">${originalPrice} ₽</span>`;
-    productDiscount.textContent = `${product.sale}%`;
+    productDiscount.textContent = `${priceInfo.discountPercent}%`;
     
     // Рейтинг и отзывы
     productRating.textContent = `${product.reviewRating} ★`;
@@ -465,15 +667,13 @@ document.addEventListener('DOMContentLoaded', () => {
           const qty = stock.qty;
           totalQuantityAll += qty;
           
-          if (stock.dtype === 4) {
-            totalFBW += qty;
-          } else {
-            totalFBS += qty;
-          }
+          const method = getStockDeliveryType(stock);
+          if (method === 'FBW') totalFBW += qty;
+          else totalFBS += qty;
           
           sizeData[sizeName] += qty;
           
-          const warehouseName = WAREHOUSES[stock.wh] || `Склад ${stock.wh}`;
+          const warehouseName = getWarehouseNameById(stock.wh);
           if (!warehouseData[warehouseName]) {
             warehouseData[warehouseName] = {
               id: stock.wh,
@@ -774,9 +974,10 @@ document.addEventListener('DOMContentLoaded', () => {
         
         const logisticsItem1 = document.createElement('div');
         logisticsItem1.className = 'logistics-item';
+        const inferredType = getStockDeliveryType(minTimeStock);
         logisticsItem1.innerHTML = `
           <span>Метод доставки:</span>
-          <span>${minTimeStock.dtype === 4 ? 'FBW (со склада WB)' : 'FBS (от продавца)'}</span>
+          <span>${inferredType === 'FBW' ? 'FBW (со склада WB)' : 'FBS (от продавца)'}</span>
         `;
         
         const logisticsItem2 = document.createElement('div');
@@ -1127,7 +1328,7 @@ document.addEventListener('DOMContentLoaded', () => {
               if (size.stocks) {
                 size.stocks.forEach(stock => {
                   const warehouseId = stock.wh;
-                  const warehouseName = WAREHOUSES[warehouseId] || `Склад ${warehouseId}`;
+         const warehouseName = getWarehouseNameById(warehouseId);
                   allWarehouses.add(warehouseName);
                   
                   if (!warehouseData[warehouseName]) {
@@ -1352,9 +1553,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 };
                 
                 // Проверяем, есть ли информация о складе в глобальном справочнике
-                if (typeof WAREHOUSES !== 'undefined' && WAREHOUSES[stock.wh]) {
-                  warehouseInfo.name = WAREHOUSES[stock.wh];
-                }
+                warehouseInfo.name = getWarehouseNameById(stock.wh);
                 
                 // Проверяем наличие детальной информации о складе
                 if (typeof WAREHOUSE_DETAILS !== 'undefined' && WAREHOUSE_DETAILS[stock.wh]) {
@@ -1407,24 +1606,19 @@ document.addEventListener('DOMContentLoaded', () => {
             
             // Добавляем ID склада и полное название как всплывающую подсказку
             const warehouseIdSpan = document.createElement('span');
-            warehouseIdSpan.textContent = `${warehouseInfo.name || `Склад ${warehouseId}`}`;
+            const mergedInfo = getMergedWarehouseDetailsById(warehouseId);
+            warehouseIdSpan.textContent = `${mergedInfo.name || warehouseInfo.name || `Склад ${warehouseId}`}`;
             warehouseIdSpan.className = 'warehouse-id-label';
             
             // Формируем расширенную подсказку
-            let tooltipText = warehouseInfo.name || `Склад ${warehouseId}`;
+            let tooltipText = mergedInfo.name || warehouseInfo.name || `Склад ${warehouseId}`;
             tooltipText += ` (ID: ${warehouseId})`;
-            
-            if (warehouseInfo.city) {
-              tooltipText += `\nГород: ${warehouseInfo.city}`;
-            }
-            
-            if (warehouseInfo.location) {
-              tooltipText += `\nАдрес: ${warehouseInfo.location}`;
-            }
-            
-            if (warehouseInfo.delivery_time) {
-              tooltipText += `\nВремя доставки: ${warehouseInfo.delivery_time} ч.`;
-            }
+            const cityVal = mergedInfo.city || warehouseInfo.city;
+            if (cityVal) tooltipText += `\nГород: ${cityVal}`;
+            const addrVal = mergedInfo.address || warehouseInfo.location;
+            if (addrVal) tooltipText += `\nАдрес: ${addrVal}`;
+            const delivVal = mergedInfo.delivery_time || warehouseInfo.delivery_time;
+            if (delivVal) tooltipText += `\nВремя доставки: ${delivVal} ч.`;
             
             warehouseIdSpan.title = tooltipText; // Расширенная подсказка
             
@@ -1747,8 +1941,8 @@ document.addEventListener('DOMContentLoaded', () => {
     productInfo.classList.add('hidden');
   }
 
-  // Функция для отображения данных о складах
-  function displayWarehouseData() {
+  // Вкладка складов удалена
+  /* function displayWarehouseData() {
     // Очищаем текущий список складов
     warehouseList.innerHTML = '';
     
@@ -1762,25 +1956,29 @@ document.addEventListener('DOMContentLoaded', () => {
     const showFBW = filterFBW.checked;
     const showFBS = filterFBS.checked;
     
-    // Преобразуем объект WAREHOUSE_DETAILS в массив для удобства обработки
-    let warehouses = Object.entries(WAREHOUSE_DETAILS).map(([id, details]) => {
-      return {
-        id: id,
-        ...details
-      };
-    });
+    // Строим объединённый каталог складов из статичного справочника и acceptance-отчёта
+    const ids = new Set([
+      ...Object.keys(typeof WAREHOUSE_DETAILS !== 'undefined' ? WAREHOUSE_DETAILS : {}),
+      ...Object.keys(ACCEPTANCE_DATA || {})
+    ]);
+    let warehouses = Array.from(ids).map(id => getMergedWarehouseDetailsById(id));
     
     // Применяем фильтр по типу склада
-    warehouses = warehouses.filter(warehouse => {
-      return (showFBW && warehouse.is_fbw) || (showFBS && warehouse.is_fbs);
-    });
+    if (!(showFBW && showFBS)) {
+      warehouses = warehouses.filter(warehouse => {
+        const isFbw = Boolean(warehouse.is_fbw);
+        const isFbs = Boolean(warehouse.is_fbs);
+        return (showFBW && isFbw) || (showFBS && isFbs);
+      });
+    }
     
     // Применяем фильтр по поисковому запросу
     if (searchText) {
       warehouses = warehouses.filter(warehouse => {
-        return warehouse.name.toLowerCase().includes(searchText) || 
-               warehouse.city.toLowerCase().includes(searchText) ||
-               warehouse.address.toLowerCase().includes(searchText);
+        const name = (warehouse.name || '').toLowerCase();
+        const city = (warehouse.city || '').toLowerCase();
+        const addr = (warehouse.address || '').toLowerCase();
+        return name.includes(searchText) || city.includes(searchText) || addr.includes(searchText);
       });
     }
     
@@ -1791,9 +1989,9 @@ document.addEventListener('DOMContentLoaded', () => {
         break;
       case 'delivery':
         warehouses.sort((a, b) => {
-          const deliveryA = parseInt(a.delivery_time) || 999;
-          const deliveryB = parseInt(b.delivery_time) || 999;
-          return deliveryA - deliveryB;
+          const aDelivery = parseInt(a.delivery_time) || inferDeliveryFromAcceptance(a.id) || 999;
+          const bDelivery = parseInt(b.delivery_time) || inferDeliveryFromAcceptance(b.id) || 999;
+          return aDelivery - bDelivery;
         });
         break;
       case 'rating':
@@ -1817,10 +2015,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Событие на изменение сортировки
     const sortByDropdown = document.getElementById('sortByDropdown');
     sortByDropdown.value = sortBy;
-    sortByDropdown.addEventListener('change', () => {
-      warehouseSort.value = sortByDropdown.value;
-      displayWarehouseData();
-    });
+    // Вкладка складов удалена
     
     // Создаем карточки для каждого склада
     warehouses.forEach(warehouse => {
@@ -1833,18 +2028,28 @@ document.addEventListener('DOMContentLoaded', () => {
       }
       
       // Определяем класс для времени доставки
-      let deliveryClass = '';
-      let deliveryTime = parseInt(warehouse.delivery_time);
-      
-      if (deliveryTime) {
-        if (deliveryTime <= 48) {
-          deliveryClass = 'fast-delivery';
-        } else if (deliveryTime <= 72) {
-          deliveryClass = 'medium-delivery';
-        } else {
-          deliveryClass = 'slow-delivery';
+        let deliveryClass = '';
+      let deliveryTime = parseInt(warehouse.delivery_time) || inferDeliveryFromAcceptance(warehouse.id);
+        
+        if (!deliveryTime) {
+          // если в статике нет, попробуем оценить по коэффициентам приёмки
+          const merged = getMergedWarehouseDetailsById(warehouse.id);
+          const acceptance = merged.acceptance;
+          const type4 = acceptance && (acceptance.types && (acceptance.types['4'] || acceptance.types[4]));
+          const type6 = acceptance && (acceptance.types && (acceptance.types['6'] || acceptance.types[6]));
+          const anyCoeff = (type4 && parseInt(type4.deliveryCoefficient)) || (type6 && parseInt(type6.deliveryCoefficient));
+          if (anyCoeff) deliveryTime = anyCoeff; // используем коэффициент как суррогат времени доставки
         }
-      }
+        
+        if (deliveryTime) {
+          if (deliveryTime <= 48) {
+            deliveryClass = 'fast-delivery';
+          } else if (deliveryTime <= 72) {
+            deliveryClass = 'medium-delivery';
+          } else {
+            deliveryClass = 'slow-delivery';
+          }
+        }
       
       // Создаем HTML-элемент для карточки склада
       const card = document.createElement('div');
@@ -1854,7 +2059,7 @@ document.addEventListener('DOMContentLoaded', () => {
       // Заполняем содержимое карточки
       card.innerHTML = `
         <div class="warehouse-info">
-          <h4>${warehouse.name}</h4>
+          <h4>${getWarehouseNameById(warehouse.id)}</h4>
           <div class="warehouse-id">ID: ${warehouse.id}</div>
           
           <div class="material-quality">
@@ -1867,8 +2072,8 @@ document.addEventListener('DOMContentLoaded', () => {
           </div>
           
           <div class="warehouse-type">
-            ${warehouse.is_fbw ? '<span class="warehouse-type-tag tag-fbw">FBW</span>' : ''}
-            ${warehouse.is_fbs ? '<span class="warehouse-type-tag tag-fbs">FBS</span>' : ''}
+            ${getMergedWarehouseDetailsById(warehouse.id).is_fbw ? '<span class="warehouse-type-tag tag-fbw">FBW</span>' : ''}
+            ${getMergedWarehouseDetailsById(warehouse.id).is_fbs ? '<span class="warehouse-type-tag tag-fbs">FBS</span>' : ''}
           </div>
           
           <a href="#" class="view-on-btn">Детали склада</a>
@@ -1899,7 +2104,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (warehouses.length === 0) {
       warehouseList.innerHTML = '<div class="no-results">Склады не найдены</div>';
     }
-  }
+  } */
 
   // Функция для очистки данных о товаре
   function clearProductData() {
@@ -2120,7 +2325,7 @@ document.addEventListener('DOMContentLoaded', () => {
         
         // Получаем полные данные о товаре
         await new Promise((resolve, reject) => {
-          const apiUrl = `https://card.wb.ru/cards/detail?appType=0&curr=rub&dest=-1257786&spp=30&nm=${product.id}`;
+          const apiUrl = buildV4DetailUrl([product.id]);
           
           fetch(apiUrl)
             .then(response => {
@@ -2130,11 +2335,12 @@ document.addEventListener('DOMContentLoaded', () => {
               return response.json();
             })
             .then(data => {
-              if (!data.data || !data.data.products || data.data.products.length === 0) {
+              const products = (data && data.data && data.data.products) ? data.data.products : data.products;
+              if (!products || products.length === 0) {
                 throw new Error(`Товар не найден: ${product.id}`);
               }
               
-              const fullProduct = data.data.products[0];
+              const fullProduct = products[0];
               
               // Сохраняем товар в историю
               chrome.storage.local.get({ savedProducts: [] }, (result) => {
@@ -2145,7 +2351,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 
                 // Текущая дата для истории
                 const currentDate = new Date().toISOString();
-                const currentPrice = fullProduct.salePriceU / 100;
+              const currentPrice = getProductPriceInfo(fullProduct).salePriceU / 100;
                 
                 if (existingIndex !== -1) {
                   // Обновляем существующий товар

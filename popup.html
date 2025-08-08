@@ -15,7 +15,6 @@
       <nav class="main-menu">
         <ul>
           <li class="active" data-tab="search-tab">Поиск</li>
-          <li data-tab="warehouse-tab">Склады</li>
           <li data-tab="favorites-tab">Избранное</li>
         </ul>
       </nav>
@@ -42,6 +41,24 @@
             <h2 id="productName"></h2>
             <div class="product-brand" id="productBrand"></div>
             <div class="product-seller" id="productSeller"></div>
+            <div class="meta-row">
+              <div class="meta-item">
+                <span class="meta-label">Категория:</span>
+                <span id="productCategory"></span>
+              </div>
+              <div class="meta-item" id="metaColors">
+                <span class="meta-label">Цвета:</span>
+                <span class="chips-row" id="productColors"></span>
+              </div>
+              <div class="meta-item">
+                <span class="meta-label">Фото:</span>
+                <span id="productPics"></span>
+              </div>
+            </div>
+            <div class="chips-row" id="productSizes"></div>
+            <div class="product-actions">
+              <a id="productLink" class="view-on-btn" href="#" target="_blank" rel="noopener noreferrer">Открыть на WB</a>
+            </div>
           </div>
         </div>
         
@@ -100,24 +117,7 @@
       </div>
     </div>
     
-    <!-- Вкладка информации о складах -->
-    <div id="warehouse-tab" class="tab-content">
-      <div class="warehouse-tools">
-        <input type="text" id="warehouseSearch" placeholder="Поиск склада...">
-        <select id="warehouseSort">
-          <option value="name">По названию</option>
-          <option value="delivery">По времени доставки</option>
-          <option value="rating">По рейтингу</option>
-        </select>
-      </div>
-      
-      <div class="warehouse-filters">
-        <label><input type="checkbox" id="filterFBW" checked> FBW</label>
-        <label><input type="checkbox" id="filterFBS" checked> FBS</label>
-      </div>
-      
-      <div id="warehouseList" class="warehouse-catalog"></div>
-    </div>
+    
     
     <!-- Вкладка избранного -->
     <div id="favorites-tab" class="tab-content">

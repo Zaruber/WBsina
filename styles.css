@@ -1,13 +1,13 @@
 :root {
-  --primary-color: #333333; /* Основной цвет - темно-серый */
-  --primary-hover: #555555;
-  --secondary-color: #f8f8f8;
-  --text-color: #333;
-  --light-text: #777;
-  --border-color: #e8e8e8;
-  --success-color: #43a047; /* A - зеленый */
-  --warning-color: #ffb300; /* B - желтый */
-  --danger-color: #e53935;
+  --primary-color: #0A84FF;
+  --primary-hover: #0066CC;
+  --secondary-color: #F5F5F7;
+  --text-color: #1C1C1E;
+  --light-text: #6E6E73;
+  --border-color: #E5E5EA;
+  --success-color: #34C759;
+  --warning-color: #FF9F0A;
+  --danger-color: #FF3B30;
   --fbw-color: #43a047;
   --fbs-color: #ffb300;
   --shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
@@ -31,26 +31,28 @@
 }
 
 body {
-  background-color: white;
+  background-color: var(--secondary-color);
   color: var(--text-color);
   font-size: 14px;
   line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 .container {
-  width: 440px; /* немного шире для лучшей вёрстки элементов */
+  width: 480px;
   max-width: 100%;
   margin: 0 auto;
-  padding: var(--space-md);
-  background: white;
-  box-shadow: none;
-  border-radius: 0;
+  padding: 16px;
+  background: #fff;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.08), 0 2px 6px rgba(0,0,0,0.06);
+  border-radius: 12px;
 }
 
 header {
-  margin-bottom: var(--space-md);
-  border-bottom: 1px solid var(--border-color);
-  padding-bottom: var(--space-md);
+  margin-bottom: 12px;
+  border-bottom: none;
+  padding-bottom: 0;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -62,7 +64,7 @@ header {
 }
 
 .header-logo {
-  height: 40px;
+  height: 28px;
   width: auto;
   max-width: 160px;
   object-fit: contain;
@@ -94,34 +96,13 @@ h4 {
   color: var(--text-color);
 }
 
-.search-container {
-  display: flex;
-  margin-bottom: var(--space-md);
-}
+.search-container { display: flex; margin-bottom: 12px; }
 
-input[type="text"] {
-  flex: 1;
-  padding: 8px var(--space-md);
-  border: 1px solid var(--border-color);
-  border-radius: var(--card-radius) 0 0 var(--card-radius);
-  outline: none;
-  font-size: 13px;
-}
+input[type="text"] { flex: 1; padding: 10px 12px; border: 1px solid var(--border-color); border-right: none; border-radius: 10px 0 0 10px; outline: none; font-size: 13px; background: #fff; }
 
-input[type="text"]:focus {
-  border-color: var(--primary-color);
-  box-shadow: 0 0 0 1px var(--primary-color);
-}
+input[type="text"]:focus { border-color: var(--primary-color); box-shadow: 0 0 0 2px rgba(10,132,255,0.15); }
 
-button {
-  padding: 8px var(--space-md);
-  background-color: var(--primary-color);
-  color: white;
-  border: none;
-  border-radius: 0 var(--card-radius) var(--card-radius) 0;
-  cursor: pointer;
-  font-weight: 400;
-}
+button { padding: 10px 14px; background-color: var(--primary-color); color: white; border: none; border-radius: 0 10px 10px 0; cursor: pointer; font-weight: 400; transition: background-color .15s ease, box-shadow .15s ease; }
 
 button:hover {
   background-color: var(--primary-hover);
@@ -146,20 +127,12 @@ button:hover {
   animation: spin 0.9s linear infinite;
 }
 
-.product-header {
-  display: flex;
-  margin-bottom: var(--space-md);
-}
+.product-header { display: flex; gap: 8px; margin-bottom: var(--space-md); }
+.product-media { display: flex; flex-direction: column; align-items: stretch; }
 
-.product-image {
-  width: 80px;
-  height: 80px;
-  margin-right: var(--space-md);
-  overflow: hidden;
-  border-radius: var(--card-radius);
-  background-color: var(--secondary-color);
-  box-shadow: var(--shadow);
-}
+.product-image { width: 96px; height: 96px; margin-right: var(--space-md); overflow: hidden; border-radius: 12px; background-color: var(--secondary-color); box-shadow: none; }
+.image-actions { margin-top: 6px; display: flex; }
+.product-image + .image-actions {}
 
 .product-image img {
   width: 100%;
@@ -184,6 +157,10 @@ button:hover {
   gap: 6px;
   font-size: 12px;
   color: var(--text-color);
+}
+
+.sizes-meta {
+  align-items: flex-start;
 }
 
 .meta-label {
@@ -219,11 +196,7 @@ button:hover {
   border: 1px solid rgba(0,0,0,0.1);
 }
 
-.product-brand {
-  color: var(--primary-color);
-  margin-top: var(--space-xs);
-  font-weight: 500;
-}
+.product-brand { color: var(--light-text); margin-top: var(--space-xs); font-weight: 500; }
 
 .product-seller {
   color: var(--light-text);
@@ -231,20 +204,9 @@ button:hover {
   font-size: 12px;
 }
 
-.stats-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: var(--space-sm);
-  margin-bottom: var(--space-md);
-}
+.stats-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 12px; }
 
-.stat-card {
-  background-color: var(--secondary-color);
-  padding: 14px;
-  border-radius: var(--card-radius);
-  box-shadow: none;
-  transition: background-color 0.15s ease, transform 0.05s ease;
-}
+.stat-card { background: #fff; padding: 14px; border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.04), 0 2px 6px rgba(0,0,0,0.04); transition: background-color .15s ease, transform .05s ease; }
 
 .stat-card:hover {
   background-color: #f0f0f0;
@@ -263,15 +225,7 @@ button:hover {
   color: var(--primary-color);
 }
 
-.section {
-  margin-bottom: var(--space-md);
-  padding: var(--space-md);
-  border: 1px solid var(--border-color);
-  border-radius: var(--card-radius);
-  position: relative;
-  box-shadow: none;
-  background: #fff;
-}
+.section { margin-bottom: 12px; padding: 12px; border: 1px solid transparent; border-radius: 12px; position: relative; box-shadow: 0 8px 24px rgba(0,0,0,0.04), 0 2px 6px rgba(0,0,0,0.04); background: #fff; }
 
 #warehouseDistribution {
   max-height: 500px;
@@ -408,6 +362,12 @@ hr {
   background-color: var(--light-text);
 }
 
+/* Компактная версия графика складов */
+.warehouses-chart.compact .chart-bar { gap: 6px; }
+.warehouses-chart.compact .chart-label { width: 72px; }
+.warehouses-chart.compact .chart-bar-container { height: 12px; }
+.warehouses-chart.compact .chart-value { min-width: 70px; font-size: 12px; }
+
 .chart-value {
   min-width: 90px;
   text-align: left;
@@ -441,11 +401,13 @@ hr {
 }
 
 .warehouse-header {
-  display: flex;
-  padding: var(--space-md);
+  display: grid;
+  grid-template-columns: 20px 1fr auto;
+  padding: 8px 12px;
   align-items: center;
   background-color: white;
   cursor: pointer;
+  gap: 8px;
 }
 
 .warehouse-header:hover {
@@ -467,10 +429,10 @@ hr {
 }
 
 .warehouse-info {
-  flex: 1;
-  display: flex;
+  display: grid;
+  grid-template-columns: 1fr 56px;
+  gap: 8px;
   align-items: center;
-  justify-content: space-between;
 }
 
 .warehouse-name {
@@ -480,29 +442,29 @@ hr {
 }
 
 .delivery-time {
-  margin-left: var(--space-sm);
+  justify-self: end;
   color: var(--light-text);
-  font-size: 13px;
+  font-size: 12px;
 }
 
 .warehouse-quantity {
   font-weight: 600;
-  margin-left: var(--space-sm);
   color: var(--primary-color);
+  white-space: nowrap;
 }
 
 .size-list {
-  padding: 0 var(--space-md) var(--space-md) 44px;
+  padding: 6px 12px 12px 32px;
   background-color: var(--secondary-color);
 }
 
 .size-item {
-  display: flex;
-  justify-content: space-between;
+  display: grid;
+  grid-template-columns: 1fr auto;
   align-items: center;
-  padding: 8px 0;
-  border-bottom: 1px solid var(--border-color);
-  font-size: 13px;
+  padding: 6px 0;
+  border-bottom: 1px dashed var(--border-color);
+  font-size: 12.5px;
 }
 
 .size-item:last-child {
@@ -603,6 +565,9 @@ hr {
   text-align: left;
   border: none;
   border-bottom: 1px solid var(--border-color);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .history-table th {
@@ -638,6 +603,20 @@ hr {
   table-layout: auto;
   margin-bottom: 0;
   font-size: 11px;
+}
+
+/* Контейнер-обертка с прокруткой для всех таблиц истории */
+.history-table-container {
+  width: 100%;
+  overflow-x: auto;
+}
+
+/* Выравнивание числовых колонок по правому краю для лаконичности */
+.history-table th:nth-child(2),
+.history-table td:nth-child(2),
+.history-table th:nth-child(3),
+.history-table td:nth-child(3) {
+  text-align: right;
 }
 
 /* Общие стили для ячеек в таблицах с прокруткой */
@@ -953,36 +932,15 @@ hr {
 }
 
 /* Навигационное меню */
-.main-menu {
-  margin-top: var(--space-xs);
-  border-bottom: 1px solid var(--border-color);
-}
+.main-menu { margin-top: 4px; border-bottom: none; }
 
-.main-menu ul {
-  display: flex;
-  list-style: none;
-  padding: 0;
-  margin: 0;
-}
+.main-menu ul { display: inline-flex; list-style: none; padding: 4px; margin: 0; background: var(--secondary-color); border-radius: 10px; }
 
-.main-menu li {
-  padding: 10px 14px;
-  cursor: pointer;
-  border-bottom: 2px solid transparent;
-  font-weight: 400;
-  color: var(--light-text);
-  font-size: 13px;
-}
+.main-menu li { padding: 8px 12px; cursor: pointer; border-bottom: 2px solid transparent; border-radius: 8px; font-weight: 500; color: var(--light-text); font-size: 13px; }
 
-.main-menu li:hover {
-  color: var(--primary-color);
-}
+.main-menu li:hover { color: var(--text-color); background: rgba(0,0,0,0.04); }
 
-.main-menu li.active {
-  font-weight: 500;
-  border-bottom: 2px solid var(--primary-color);
-  color: var(--primary-color);
-}
+.main-menu li.active { font-weight: 500; border-bottom: 2px solid transparent; color: var(--text-color); background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.06); }
 
 /* Стили вкладок */
 .tab-content {

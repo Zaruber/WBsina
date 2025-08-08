@@ -545,7 +545,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Фото
     productPics.textContent = Number.isFinite(product.pics) ? product.pics : '';
 
-    // Цвета
+    // Цвета (чипы)
     productColors.innerHTML = '';
     if (Array.isArray(product.colors) && product.colors.length > 0) {
       product.colors.slice(0, 10).forEach(color => {
@@ -574,12 +574,17 @@ document.addEventListener('DOMContentLoaded', () => {
       });
     }
 
-    // Размеры (чипы)
+    // Размеры (чипы) — показываем дружелюбные подписи
     productSizesChips.innerHTML = '';
     if (Array.isArray(product.sizes) && product.sizes.length > 0) {
       const uniq = new Set();
       product.sizes.forEach(s => {
-        const display = s.name || s.origName || 'Без размера';
+        const rawName = s.name || s.origName || 'Без размера';
+        let display = rawName;
+        // Попробуем добавить подсказку диапазонов (например 46-48 → RU)
+        if (/^\d{2}(?:-\d{2})?$/.test(rawName)) {
+          display = `${rawName} RU`;
+        }
         if (display && !uniq.has(display)) {
           uniq.add(display);
           const chip = document.createElement('span');
@@ -714,10 +719,12 @@ document.addEventListener('DOMContentLoaded', () => {
       
       const sizesChartContent = document.createElement('div');
       sizesChartContent.className = 'sizes-chart';
-      
-      for (const sizeName in sizeData) {
-        const percentage = Math.round((sizeData[sizeName] / totalQuantityAll) * 100);
-        
+
+      const sortedSizes = Object.entries(sizeData)
+        .sort(([, aQty], [, bQty]) => bQty - aQty);
+
+      for (const [sizeName, qty] of sortedSizes) {
+        const percentage = Math.round((qty / totalQuantityAll) * 100);
         const sizeBar = document.createElement('div');
         sizeBar.className = 'chart-bar';
         sizeBar.innerHTML = `
@@ -725,9 +732,8 @@ document.addEventListener('DOMContentLoaded', () => {
           <div class="chart-bar-container">
             <div class="chart-bar-fill" style="width: ${percentage}%"></div>
           </div>
-          <div class="chart-value">${sizeData[sizeName]} шт. (${percentage}%)</div>
+          <div class="chart-value">${qty} шт. (${percentage}%)</div>
         `;
-        
         sizesChartContent.appendChild(sizeBar);
       }
       
@@ -735,77 +741,87 @@ document.addEventListener('DOMContentLoaded', () => {
       warehouseDistribution.appendChild(sizesChart);
     }
     
-    // Создаем график распределения по складам
+    // Создаем компактное распределение по складам
     if (Object.keys(warehouseData).length > 0) {
       const warehousesChart = document.createElement('div');
       warehousesChart.className = 'chart-container';
-      warehousesChart.innerHTML = '<h4>Распределение по складам</h4>';
-      
+      const header = document.createElement('div');
+      header.style.display = 'flex';
+      header.style.justifyContent = 'space-between';
+      header.style.alignItems = 'center';
+      const h4 = document.createElement('h4');
+      h4.textContent = 'Распределение по складам';
+      const toggleTopBtn = document.createElement('button');
+      toggleTopBtn.className = 'mini-button';
+      toggleTopBtn.textContent = 'Показать все';
+      header.appendChild(h4);
+      header.appendChild(toggleTopBtn);
+      warehousesChart.appendChild(header);
+
       const warehousesChartContent = document.createElement('div');
-      warehousesChartContent.className = 'warehouses-chart';
-      
-      // Сортируем склады по количеству товаров (от большего к меньшему)
+      warehousesChartContent.className = 'warehouses-chart compact';
+
       const sortedWarehouses = Object.entries(warehouseData)
         .sort(([, a], [, b]) => b.total - a.total);
-      
-      // Берем топ-10 складов для наглядности
-      const topWarehouses = sortedWarehouses.slice(0, 10);
-      
-      for (const [warehouseName, data] of topWarehouses) {
-        const percentage = Math.round((data.total / totalQuantityAll) * 100);
-        
-        const warehouseBar = document.createElement('div');
-        warehouseBar.className = 'chart-bar';
-        
-        // Создаем сокращенное имя склада для графика
-        let shortName = warehouseName.replace('СЦ ', '').split(' ')[0];
-        
-        warehouseBar.innerHTML = `
-          <div class="chart-label" title="${warehouseName}">${shortName}</div>
-          <div class="chart-bar-container">
-            <div class="chart-bar-fill ${data.deliveryTime < 40 ? 'fast-delivery' : ''}" style="width: ${percentage}%"></div>
-          </div>
-          <div class="chart-value">${data.total} шт. (${percentage}%)</div>
-        `;
-        
-        warehousesChartContent.appendChild(warehouseBar);
-      }
-      
-      // Если есть склады после топ-10, группируем их как "Другие"
-      if (sortedWarehouses.length > 10) {
-        const otherWarehouses = sortedWarehouses.slice(10);
-        const otherTotal = otherWarehouses.reduce((sum, [, data]) => sum + data.total, 0);
-        const otherPercentage = Math.round((otherTotal / totalQuantityAll) * 100);
-        
-        const otherBar = document.createElement('div');
-        otherBar.className = 'chart-bar';
-        otherBar.innerHTML = `
-          <div class="chart-label">Другие</div>
-          <div class="chart-bar-container">
-            <div class="chart-bar-fill other-warehouses" style="width: ${otherPercentage}%"></div>
-          </div>
-          <div class="chart-value">${otherTotal} шт. (${otherPercentage}%)</div>
-        `;
-        
-        warehousesChartContent.appendChild(otherBar);
-      }
-      
+
+      const renderBars = (limit) => {
+        warehousesChartContent.innerHTML = '';
+        const slice = sortedWarehouses.slice(0, limit);
+        for (const [warehouseName, data] of slice) {
+          const percentage = Math.round((data.total / totalQuantityAll) * 100);
+          const warehouseBar = document.createElement('div');
+          warehouseBar.className = 'chart-bar';
+          let shortName = warehouseName.replace('СЦ ', '').split(' ')[0];
+          warehouseBar.innerHTML = `
+            <div class="chart-label" title="${warehouseName}">${shortName}</div>
+            <div class="chart-bar-container">
+              <div class="chart-bar-fill ${data.deliveryTime < 40 ? 'fast-delivery' : ''}" style="width: ${percentage}%"></div>
+            </div>
+            <div class="chart-value">${data.total} (${percentage}%)</div>
+          `;
+          warehousesChartContent.appendChild(warehouseBar);
+        }
+      };
+
+      let expanded = false;
+      renderBars(5);
+      toggleTopBtn.addEventListener('click', () => {
+        expanded = !expanded;
+        if (expanded) {
+          renderBars(15);
+          toggleTopBtn.textContent = 'Свернуть';
+        } else {
+          renderBars(5);
+          toggleTopBtn.textContent = 'Показать все';
+        }
+      });
+
       warehousesChart.appendChild(warehousesChartContent);
       warehouseDistribution.appendChild(warehousesChart);
     }
     
-    // Добавляем раздел с расположением по складам (как на скриншоте)
-    const warehouseHeader = document.createElement('h4');
-    warehouseHeader.className = 'section-title';
-    warehouseHeader.textContent = 'Раскладка по складам';
+    // Добавляем раздел с расположением по складам (компакт, свёрнут по умолчанию)
+    const warehouseHeader = document.createElement('div');
+    warehouseHeader.style.display = 'flex';
+    warehouseHeader.style.justifyContent = 'space-between';
+    warehouseHeader.style.alignItems = 'center';
+    const title = document.createElement('h4');
+    title.className = 'section-title';
+    title.textContent = 'Раскладка по складам';
+    const toggleDetailsBtn = document.createElement('button');
+    toggleDetailsBtn.className = 'mini-button';
+    toggleDetailsBtn.textContent = 'Показать';
+    warehouseHeader.appendChild(title);
+    warehouseHeader.appendChild(toggleDetailsBtn);
     warehouseDistribution.appendChild(warehouseHeader);
     
-    // Сортируем склады по времени доставки
+    // Сортируем склады по общему остатку по убыванию
     const sortedWarehouses = Object.entries(warehouseData)
-      .sort(([, a], [, b]) => a.deliveryTime - b.deliveryTime);
+      .sort(([, a], [, b]) => b.total - a.total);
     
     const warehouseList = document.createElement('div');
     warehouseList.className = 'warehouse-list';
+    warehouseList.style.display = 'none';
     
     for (const [warehouseName, data] of sortedWarehouses) {
       const warehouseSection = document.createElement('div');
@@ -822,26 +838,30 @@ document.addEventListener('DOMContentLoaded', () => {
         <div class="warehouse-quantity">${data.total} шт.</div>
       `;
       
-      // Добавляем обработчик клика для сворачивания/разворачивания
-      warehouseHeader.querySelector('.warehouse-toggle').addEventListener('click', function() {
-        const sizeList = warehouseSection.querySelector('.size-list');
-        const isExpanded = this.getAttribute('data-expanded') === 'true';
-        
+      // Добавляем обработчики клика для сворачивания/разворачивания (клик по стрелке или по всей строке)
+      const toggleEl = warehouseHeader.querySelector('.warehouse-toggle');
+      const sizeList = document.createElement('div');
+      const toggleSizes = () => {
+        const isExpanded = toggleEl.getAttribute('data-expanded') === 'true';
         if (isExpanded) {
           sizeList.style.display = 'none';
-          this.textContent = '›';
-          this.setAttribute('data-expanded', 'false');
+          toggleEl.textContent = '›';
+          toggleEl.setAttribute('data-expanded', 'false');
         } else {
           sizeList.style.display = 'block';
-          this.textContent = '⌄';
-          this.setAttribute('data-expanded', 'true');
+          toggleEl.textContent = '⌄';
+          toggleEl.setAttribute('data-expanded', 'true');
         }
+      };
+      toggleEl.addEventListener('click', (e) => { e.stopPropagation(); toggleSizes(); });
+      warehouseHeader.addEventListener('click', (e) => {
+        if (e.target.classList.contains('warehouse-quantity')) return; // клик по количеству не разворачивает
+        toggleSizes();
       });
       
       warehouseSection.appendChild(warehouseHeader);
       
       // Добавляем список размеров для этого склада
-      const sizeList = document.createElement('div');
       sizeList.className = 'size-list';
       sizeList.style.display = 'none';
       
@@ -887,6 +907,11 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     warehouseDistribution.appendChild(warehouseList);
+    toggleDetailsBtn.addEventListener('click', () => {
+      const isHidden = warehouseList.style.display === 'none';
+      warehouseList.style.display = isHidden ? 'block' : 'none';
+      toggleDetailsBtn.textContent = isHidden ? 'Скрыть' : 'Показать';
+    });
     
     // История цен, если доступна
     if (priceHistory.length > 1) {
@@ -1030,7 +1055,7 @@ document.addEventListener('DOMContentLoaded', () => {
       priceHistoryTitle.textContent = 'История цен';
       priceHistorySection.appendChild(priceHistoryTitle);
       
-      // Таблица истории цен
+      // Таблица истории цен (в контейнере для горизонтальной прокрутки)
       const priceHistoryTable = document.createElement('table');
       priceHistoryTable.className = 'history-table';
       
@@ -1094,7 +1119,10 @@ document.addEventListener('DOMContentLoaded', () => {
         tbody.appendChild(row);
       });
       
-      priceHistorySection.appendChild(priceHistoryTable);
+      const priceTableContainer = document.createElement('div');
+      priceTableContainer.className = 'history-table-container';
+      priceTableContainer.appendChild(priceHistoryTable);
+      priceHistorySection.appendChild(priceTableContainer);
       historyInfo.appendChild(priceHistorySection);
       
       // Добавляем историю отзывов, если есть несколько сохранений
@@ -1210,7 +1238,10 @@ document.addEventListener('DOMContentLoaded', () => {
           });
         }
         
-        feedbacksHistorySection.appendChild(feedbacksHistoryTable);
+        const feedbacksTableContainer = document.createElement('div');
+        feedbacksTableContainer.className = 'history-table-container';
+        feedbacksTableContainer.appendChild(feedbacksHistoryTable);
+        feedbacksHistorySection.appendChild(feedbacksTableContainer);
         historyInfo.appendChild(feedbacksHistorySection);
       }
       
@@ -1295,7 +1326,10 @@ document.addEventListener('DOMContentLoaded', () => {
           });
           
           stockHistoryTable.appendChild(stockTbody);
-          stockHistorySection.appendChild(stockHistoryTable);
+          const stockTableContainer = document.createElement('div');
+          stockTableContainer.className = 'history-table-container';
+          stockTableContainer.appendChild(stockHistoryTable);
+          stockHistorySection.appendChild(stockTableContainer);
           historyInfo.appendChild(stockHistorySection);
         }
       }
@@ -1414,7 +1448,10 @@ document.addEventListener('DOMContentLoaded', () => {
           });
           
           warehouseHistoryTable.appendChild(warehouseTbody);
-          warehouseHistorySection.appendChild(warehouseHistoryTable);
+          const warehouseTableContainer = document.createElement('div');
+          warehouseTableContainer.className = 'history-table-container';
+          warehouseTableContainer.appendChild(warehouseHistoryTable);
+          warehouseHistorySection.appendChild(warehouseTableContainer);
           historyInfo.appendChild(warehouseHistorySection);
         }
       }

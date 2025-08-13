@@ -56,6 +56,8 @@ header {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
 }
 
 .logo {
@@ -1868,4 +1870,69 @@ hr {
   color: var(--light-text);
   text-align: center;
   font-size: 13px;
+}
+
+/* Стили для элемента Telegram в хедере */
+.telegram-link {
+  flex-shrink: 0;
+}
+
+.telegram-chat-link {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  text-decoration: none;
+  padding: 6px 10px;
+  border-radius: 8px;
+  background: rgba(0, 136, 204, 0.05);
+  border: 1px solid rgba(0, 136, 204, 0.1);
+  transition: all 0.2s ease;
+  max-width: 200px;
+}
+
+.telegram-chat-link:hover {
+  background: rgba(0, 136, 204, 0.1);
+  border-color: rgba(0, 136, 204, 0.2);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 136, 204, 0.15);
+}
+
+.telegram-logo {
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
+}
+
+.telegram-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.telegram-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--primary-color);
+  white-space: nowrap;
+}
+
+.telegram-description {
+  font-size: 10px;
+  color: var(--light-text);
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Адаптация хедера для компактности */
+@media (max-width: 480px) {
+  .telegram-chat-link {
+    max-width: 160px;
+  }
+  
+  .telegram-description {
+    display: none;
+  }
 } 
